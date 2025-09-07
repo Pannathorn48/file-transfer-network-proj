@@ -1,3 +1,16 @@
+// Basic message type identifiers
+#define MSG_ACK 1
+#define MSG_NACK 2
+#define MSG_DATA 3
+
+#include <stdint.h>
+
+struct message {
+    uint8_t msg_type;
+    char data[1024];
+}__attribute__((packed));
+
+
 /**
  * @brief Checks a message for an ACK or NACK pattern.
  *
@@ -10,7 +23,7 @@
  *   - 1 if a NACK is found.
  *   - -1 if neither an ACK nor a NACK is found.
  */
-short has_NACK(const char* str);
+short validate_header(struct message* msg);
 
 
 /**

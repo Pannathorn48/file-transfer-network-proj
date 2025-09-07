@@ -4,10 +4,11 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include "../../headers/connection.h"
 
 int main(){
     int sock;
-    char buffer[1024];
+    struct message msg;
     struct sockaddr_in server;
 
     sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -22,21 +23,25 @@ int main(){
 
     while(1){
         printf("Enter message: ");
-        fgets(buffer, 1024, stdin);
+        if(!fgets(msg.data, sizeof(msg.data), stdin)){
+            break; // input error / EOF
+        }
 
-        buffer[strcspn(buffer, "\n")] = '\0';
+        msg.data[strcspn(msg.data, "\n")] = '\0';
+        msg.msg_type = MSG_DATA;
 
-        if (strcmp(buffer, "quit") == 0) {
+        if (strcmp(msg.data, "quit") == 0) {
             break;
         }
 
+        if(sendto(sock, &msg, sizeof(msg), 0, (struct sockaddr*)&server, sizeof(server)) < 0){
+            perror("sendto failed");
+            break;
+        }
 
-        sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr*)&server, sizeof(server));
-
-        int len = recvfrom(sock, buffer, sizeof(buffer)-1, 0, NULL, NULL);
-        if (len > 0) {
-            buffer[len] = '\0';
-            printf("Server replied: %s\n", buffer);
+        int len = recvfrom(sock, &msg, sizeof(msg), 0, NULL, NULL);
+        if (len > 0 && msg.msg_type == MSG_ACK){
+            printf("ACK!\n");
         }
     }
 

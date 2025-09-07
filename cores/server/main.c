@@ -7,10 +7,13 @@
 #include <sys/socket.h>
 #include "../../headers/connection.h"
 #include "../../headers/error.h"
+#include <stdbool.h>
+
+
 
 int main(){
     int sock;
-    char buffer[1024];
+    struct message msg;
     struct sockaddr_in server , client;
     unsigned int client_len = sizeof(client);
 
@@ -33,11 +36,22 @@ int main(){
 
 
     while(1){
-        int len = recvfrom(sock, buffer, 1024, 0, (struct sockaddr*)&client, &client_len);
-        buffer[len] = '\0';
-        printf("Received: %s\n" , buffer);
+        memset(&msg, 0, sizeof(msg));
+        int len = recvfrom(sock, &msg, sizeof(msg), 0, (struct sockaddr*)&client, &client_len);
+        if(len < 0){
+            perror("recvfrom failed");
+            continue;
+        }
 
-        sendto(sock , buffer , len , 0 , (struct sockaddr*)&client , client_len);
+        msg.data[sizeof(msg.data)-1] = '\0';
+        printf("Received: %s\n" , msg.data);
+
+        msg.msg_type = MSG_ACK;
+        msg.data[0] = '\0';
+
+        if(sendto(sock ,  &msg, sizeof(msg), 0 , (struct sockaddr*)&client , client_len) < 0){
+            perror("sendto failed");
+        }
     }
 
     return 0;
