@@ -1,0 +1,17 @@
+_OLD_PATH="$PATH"
+NETWORK_ACTIVATE=true
+
+export PATH="./bin:$PATH"
+
+
+ deactivate() {
+        if [ "$NETWORK_ACTIVATE" = "true" ]; then
+            export PATH="$_OLD_PATH"
+            export PS1="$_OLD_PS1"
+            unset NETWORK_ACTIVATE
+            unset _OLD_PATH
+            echo "Deactivated network environment."
+        else
+            echo "No network environment is active."
+        fi
+    }
