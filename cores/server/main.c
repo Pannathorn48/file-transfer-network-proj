@@ -5,8 +5,8 @@
 #include <arpa/inet.h>
 #include <sys/_endian.h>
 #include <sys/socket.h>
-#include "../../headers/connection.h"
-#include "../../headers/error.h"
+#include "connection.h"
+#include "error.h"
 #include <stdbool.h>
 
 
@@ -46,7 +46,7 @@ int main(){
         msg.data[sizeof(msg.data)-1] = '\0';
         printf("Received: %s\n" , msg.data);
 
-        msg.msg_type = MSG_ACK;
+        msg.flags = (msg.flags & TYPE_MARKS) |  MSG_ACK;
         msg.data[0] = '\0';
 
         if(sendto(sock ,  &msg, sizeof(msg), 0 , (struct sockaddr*)&client , client_len) < 0){

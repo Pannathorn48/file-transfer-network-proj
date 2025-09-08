@@ -4,7 +4,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include "../../headers/connection.h"
+#include "connection.h"
+#include "debug.h"
 
 int main(){
     int sock;
@@ -22,13 +23,14 @@ int main(){
     server.sin_port = htons(8080);
 
     while(1){
+        memset(&msg , 0 , sizeof(msg));
         printf("Enter message: ");
         if(!fgets(msg.data, sizeof(msg.data), stdin)){
-            break; // input error / EOF
+            break;
         }
 
         msg.data[strcspn(msg.data, "\n")] = '\0';
-        msg.msg_type = MSG_DATA;
+        msg.flags = msg.flags & (MSG_DATA | TYPE_MARKS);
 
         if (strcmp(msg.data, "quit") == 0) {
             break;
@@ -40,7 +42,8 @@ int main(){
         }
 
         int len = recvfrom(sock, &msg, sizeof(msg), 0, NULL, NULL);
-        if (len > 0 && msg.msg_type == MSG_ACK){
+        printBits(sizeof(msg.flags), &msg.flags);
+        if (len > 0 && (msg.flags & (TYPE_MARKS ^ 255)) == MSG_ACK){
             printf("ACK!\n");
         }
     }

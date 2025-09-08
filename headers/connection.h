@@ -1,12 +1,17 @@
 // Basic message type identifiers
-#define MSG_ACK 1
-#define MSG_NACK 2
-#define MSG_DATA 3
+#define MSG_ACK     0b10000000
+#define MSG_NACK    0b01000000
+#define MSG_INIT    0b11000000
+#define MSG_DATA    0b00000000
+#define TYPE_MARKS   0b00111111
 
 #include <stdint.h>
 
+
+// ####### HEADER FLAGS #########
+//  the first 2 bits indicated message type
 struct message {
-    uint8_t msg_type;
+    uint8_t flags;
     char data[1024];
 }__attribute__((packed));
 
@@ -40,3 +45,6 @@ short validate_header(struct message* msg);
  *   -A socket file descriptor (positive number)
  */
  int new_connection(char* port , struct sockaddr_in* server);
+
+
+ int init_client(char *ip , char* port);

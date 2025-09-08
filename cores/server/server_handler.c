@@ -10,8 +10,8 @@
 #include <arpa/inet.h>
 #include <sys/_endian.h>
 #include <sys/socket.h>
-#include "../../headers/connection.h"
-#include "../../headers/error.h"
+#include "connection.h"
+#include "error.h"
 
 #endif /* NETWORK_HEADERS_H */
 
