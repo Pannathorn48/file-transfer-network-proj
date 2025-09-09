@@ -5,7 +5,6 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include "connection.h"
-#include "debug.h"
 
 int main(){
     int sock;
@@ -42,7 +41,6 @@ int main(){
         }
 
         int len = recvfrom(sock, &msg, sizeof(msg), 0, NULL, NULL);
-        printBits(sizeof(msg.flags), &msg.flags);
         if (len > 0 && (msg.flags & (TYPE_MARKS ^ 255)) == MSG_ACK){
             printf("ACK!\n");
         }

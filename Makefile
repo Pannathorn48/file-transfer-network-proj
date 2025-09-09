@@ -6,9 +6,9 @@ server: server_handler.o server.o
 	@echo "Compiling server"
 	$(CC) $(CFLAGS) ./bin/server.o ./bin/server_handler.o -o ./bin/server
 	@make clear-o
-client: debug.o
+client: 
 	@echo "Compiling client"
-	$(CC) $(CFLAGS) ./cores/client/main.c ./bin/debug.o -o ./bin/client
+	$(CC) $(CFLAGS) ./cores/client/main.c  -o ./bin/client
 debug.o:
 	$(CC) $(CFLAGS) ./cores/common/debug.c -c -o ./bin/debug.o
 server_handler.o:

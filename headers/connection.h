@@ -3,7 +3,7 @@
 #define MSG_NACK    0b01000000
 #define MSG_INIT    0b11000000
 #define MSG_DATA    0b00000000
-#define TYPE_MARKS   0b00111111
+#define TYPE_MARKS  0b00111111
 
 #include <stdint.h>
 
