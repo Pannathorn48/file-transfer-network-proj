@@ -3,10 +3,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/_endian.h>
 #include <sys/socket.h>
 #include "connection.h"
 #include "error.h"
 #include <stdbool.h>
+#include "request_send_file.h"
 
 
 
@@ -51,6 +53,25 @@ int main(){
         if(sendto(sock ,  &msg, sizeof(msg), 0 , (struct sockaddr*)&client , client_len) < 0){
             perror("sendto failed");
         }
+
+        // Waiting for client send request file
+        int fileNameRequestlen = recvfrom(sock, &msg, sizeof(msg), 0, (struct sockaddr*)&client, &client_len);
+        if(fileNameRequestlen < 0){
+            perror("recvfrom failed");
+            continue;
+        }
+
+        if (send_file(msg.data, sock, client) > 0) {
+           memset(&msg, 0, sizeof(msg));
+            msg.flags = MSG_ERR;
+            msg.data_length = 0;
+            if (sendto(sock, &msg, sizeof(msg), 0, (struct sockaddr *)&client, client_len) < 0)
+            {
+                perror("sendto failed");
+            }
+            continue; 
+        }
+        
     }
 
     return 0;

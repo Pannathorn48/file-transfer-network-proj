@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include "connection.h"
+#include "request_send_file.h"
 
 int main(){
     int sock;
@@ -22,13 +23,14 @@ int main(){
     server.sin_port = htons(8080);
 
     while(1){
+        char fileName[1024];
         memset(&msg , 0 , sizeof(msg));
         printf("Enter message: ");
-        if(!fgets(msg.data, sizeof(msg.data), stdin)){
+        if(!fgets(fileName, sizeof(msg.data), stdin)){
             break;
         }
 
-        msg.data[strcspn(msg.data, "\n")] = '\0';
+        fileName[strcspn(fileName, "\n")] = '\0';
         msg.flags = msg.flags & (MSG_DATA | TYPE_MARKS);
 
         if (strcmp(msg.data, "quit") == 0) {
@@ -44,6 +46,10 @@ int main(){
         if (len > 0 && (msg.flags & (TYPE_MARKS ^ 255)) == MSG_ACK){
             printf("ACK!\n");
         }
+
+        // After receive ACK from server start send file name to request file from server
+        request_file(fileName, sock, server);
+        
     }
 
     close(sock);
