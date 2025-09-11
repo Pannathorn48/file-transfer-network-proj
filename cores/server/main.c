@@ -10,65 +10,68 @@
 #include <stdbool.h>
 #include "request_send_file.h"
 
-
-
-int main(){
+int main()
+{
     int sock;
     struct message msg;
-    struct sockaddr_in server , client;
+    struct sockaddr_in server, client;
     unsigned int client_len = sizeof(client);
 
     // handle create new connection
     sock = new_connection("8080", &server);
-    switch (sock) {
-        case ERR_SOCKET_FAIL:{
-            perror("Error : failed to create socket");
-            exit(EXIT_FAILURE);
-        }
-        case ERR_INVALID_PORT:{
-            perror("Error : port is invalid");
-            exit(EXIT_FAILURE);
-        }
-        case ERR_PORT_IN_USE:{
-            perror("Error : port is in used");
-            exit(EXIT_FAILURE);
-        }
+    switch (sock)
+    {
+    case ERR_SOCKET_FAIL:
+    {
+        perror("Error : failed to create socket");
+        exit(EXIT_FAILURE);
+    }
+    case ERR_INVALID_PORT:
+    {
+        perror("Error : port is invalid");
+        exit(EXIT_FAILURE);
+    }
+    case ERR_PORT_IN_USE:
+    {
+        perror("Error : port is in used");
+        exit(EXIT_FAILURE);
+    }
     }
 
-
-    while(1){
+    while (1)
+    {
         memset(&msg, 0, sizeof(msg));
-        int len = recvfrom(sock, &msg, sizeof(msg), 0, (struct sockaddr*)&client, &client_len);
-        if(len < 0){
+        int len = recvfrom(sock, &msg, sizeof(msg), 0, (struct sockaddr *)&client, &client_len);
+        if (len < 0)
+        {
             perror("recvfrom failed");
             continue;
         }
 
-        msg.data[sizeof(msg.data)-1] = '\0';
-        printf("Received: %s\n" , msg.data);
+        msg.data[sizeof(msg.data) - 1] = '\0';
+        printf("Received: %s\n", msg.data);
 
-        HDR_SET_ACK(msg.header_flags , HDR_ACK_ACK);
+        HDR_SET_ACK(msg.header_flags, HDR_ACK_ACK);
         msg.data[0] = '\0';
 
-        if(sendto(sock ,  &msg, sizeof(msg), 0 , (struct sockaddr*)&client , client_len) < 0){
+        if (sendto(sock, &msg, sizeof(msg), 0, (struct sockaddr *)&client, client_len) < 0)
+        {
             perror("sendto failed");
         }
 
         // Waiting for client send request file
-        int fileNameRequestlen = recvfrom(sock, &msg, sizeof(msg), 0, (struct sockaddr*)&client, &client_len);
-        if(fileNameRequestlen < 0){
+        int fileNameRequestlen = recvfrom(sock, &msg, sizeof(msg), 0, (struct sockaddr *)&client, &client_len);
+        if (fileNameRequestlen < 0)
+        {
             perror("recvfrom failed");
             continue;
         }
 
-        if (send_file(msg.data, sock, client) > 0) {
+        if (send_file(msg.data, sock, client) > 0)
+        {
             continue;
         }
-        
     }
 
     return 0;
-
-
-
 }
