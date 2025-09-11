@@ -3,6 +3,8 @@
 #define MSG_NACK    0b01000000
 #define MSG_INIT    0b11000000
 #define MSG_DATA    0b00000000
+#define MSG_EOF     0b00000001
+#define MSG_ERR     0b00000010
 #define TYPE_MARKS  0b00111111
 
 #include <stdint.h>
@@ -13,6 +15,7 @@
 struct message {
     uint8_t flags;
     char data[1024];
+    uint16_t data_length;
 }__attribute__((packed));
 
 
