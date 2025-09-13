@@ -1,24 +1,72 @@
-// Basic message type identifiers
-#define MSG_ACK     0b10000000
-#define MSG_NACK    0b01000000
-#define MSG_INIT    0b11000000
-#define MSG_DATA    0b00000000
-#define MSG_FIN     0b00000001
-#define MSG_ERR     0b00000010
-#define TYPE_MARKS  0b00111111
+/* ============================================================================
+ * 32-bit Header Layout (field: header_flags)
+ *
+ *  Bit indices (MSB -> LSB):
+ *   31        30 29        28        27 26 25 24        23 ................. 0
+ *  +-----------+-----------+---------+------------------+--------------------+
+ *  | META_DATA | ACK CODE  |  FIN    |   STATUS CODE    |   SEQUENCE NUMBER  |
+ *  |   (1b)    |  (2 bits) |  (1b)   |     (4 bits)     |      (24 bits)     |
+ *  +-----------+-----------+---------+------------------+--------------------+
+ *
+ *  Field Groups:
+ *    META_DATA (bit 31)          : 1 = this packet carries only metadata (e.g., filename, total parts)
+ *    ACK CODE (bits 30..29)      : 00 = NONE, 01 = ACK, 10 = NACK, 11 = RESERVED (future)
+ *    FIN (bit 28)                : 1 = final packet / stream completion
+ *    STATUS CODE (bits 27..24)   : 4-bit application status / error code (0-15)
+ *    SEQUENCE NUMBER (23..0)     : 24-bit unsigned sequence value (0 - 16,777,215)
+ *
+ *  Packing Order (MSB->LSB): | META_DATA | ACK | FIN | STATUS | SEQ |
+ *
+ *  Use the macros below to set/extract each sub-field safely.
+ * ============================================================================ */
 
 #include <stdint.h>
 
+/* Bit masks */
+#define HDR_FLAG_META        0x80000000u  /* bit 31 */
+#define HDR_ACK_MASK         0x60000000u  /* bits 30-29 */
+#define HDR_FLAG_FIN         0x10000000u  /* bit 28 */
+#define HDR_STATUS_MASK      0x0F000000u  /* bits 27-24 */
+#define HDR_SEQ_MASK         0x00FFFFFFu  /* bits 23-0  */
 
-// ####### HEADER FLAGS #########
-//  the first 2 bits indicated message type
+/* Shifts */
+#define HDR_STATUS_SHIFT     24
+
+/* ACK codes (masked by HDR_ACK_MASK) */
+#define HDR_ACK_NONE         0x00000000u  /* 00 */
+#define HDR_ACK_ACK          0x20000000u  /* 01 */
+#define HDR_ACK_NACK         0x40000000u  /* 10 */
+#define HDR_ACK_RESERVED     0x60000000u  /* 11 (unused) */
+
+/* Helper macros */
+#define HDR_GET_META(h)      (((h) & HDR_FLAG_META) != 0u)
+#define HDR_SET_META(h)      do { (h) |= HDR_FLAG_META; } while(0)
+#define HDR_CLR_META(h)      do { (h) &= ~HDR_FLAG_META; } while(0)
+
+#define HDR_GET_ACK(h)       ((h) & HDR_ACK_MASK)
+#define HDR_SET_ACK(h,a)     do { (h) = ((h) & ~HDR_ACK_MASK) | ((a) & HDR_ACK_MASK); } while(0)
+
+#define HDR_GET_FIN(h)       (((h) & HDR_FLAG_FIN) != 0u)
+#define HDR_SET_FIN(h)       do { (h) |= HDR_FLAG_FIN; } while(0)
+#define HDR_CLR_FIN(h)       do { (h) &= ~HDR_FLAG_FIN; } while(0)
+
+#define HDR_GET_STATUS(h)    ( (uint8_t)(((h) & HDR_STATUS_MASK) >> HDR_STATUS_SHIFT) )
+#define HDR_SET_STATUS(h,s)  do { (h) = ((h) & ~HDR_STATUS_MASK) | (((uint32_t)(s) & 0x0Fu) << HDR_STATUS_SHIFT); } while(0)
+
+#define HDR_GET_SEQ(h)       ( (h) & HDR_SEQ_MASK )
+#define HDR_SET_SEQ(h,seq)   do { (h) = ((h) & ~HDR_SEQ_MASK) | ((uint32_t)(seq) & HDR_SEQ_MASK); } while(0)
+
 struct message {
-    uint8_t flags;
-    uint32_t sequence_number;
-    char data[1024];
-    uint16_t data_length;
-}__attribute__((packed));
+    uint32_t header_flags; /* Packed 32-bit header described above */
+    char data[1024];       /* Payload buffer */
+    unsigned short data_length; /* Number of valid bytes in data */
+} __attribute__((packed));
 
+/* Example unpack pattern:
+ *  uint8_t  status = HDR_GET_STATUS(msg->header_flags);
+ *  uint32_t seq    = HDR_GET_SEQ(msg->header_flags);
+ *  int is_meta     = HDR_GET_META(msg->header_flags);
+ */
 
 /**
  * @brief Checks a message for an ACK or NACK pattern.
