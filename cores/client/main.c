@@ -31,7 +31,7 @@ int main(){
         }
 
         fileName[strcspn(fileName, "\n")] = '\0';
-        msg.flags = msg.flags & (MSG_DATA | TYPE_MARKS);
+        HDR_SET_ACK(msg.header_flags , HDR_ACK_NONE)
 
         if (strcmp(msg.data, "quit") == 0) {
             break;
@@ -43,7 +43,7 @@ int main(){
         }
 
         int len = recvfrom(sock, &msg, sizeof(msg), 0, NULL, NULL);
-        if (len > 0 && (msg.flags & (TYPE_MARKS ^ 255)) == MSG_ACK){
+        if (len > 0 && HDR_GET_ACK(msg.header_flags) == HDR_ACK_ACK){
             printf("ACK!\n");
         }
 
