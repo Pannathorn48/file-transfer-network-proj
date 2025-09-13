@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <sys/_endian.h>
 #include <sys/socket.h>
 #include "connection.h"
 #include "error.h"

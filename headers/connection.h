@@ -3,6 +3,8 @@
 #define MSG_NACK    0b01000000
 #define MSG_INIT    0b11000000
 #define MSG_DATA    0b00000000
+#define MSG_FIN     0b00000001
+#define MSG_ERR     0b00000010
 #define TYPE_MARKS  0b00111111
 
 #include <stdint.h>
@@ -12,7 +14,9 @@
 //  the first 2 bits indicated message type
 struct message {
     uint8_t flags;
+    uint32_t sequence_number;
     char data[1024];
+    uint16_t data_length;
 }__attribute__((packed));
 
 

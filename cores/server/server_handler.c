@@ -5,10 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/_types/_socklen_t.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <sys/_endian.h>
 #include <sys/socket.h>
 #include "connection.h"
 #include "error.h"
