@@ -14,6 +14,7 @@
 //  the first 2 bits indicated message type
 struct message {
     uint8_t flags;
+    uint32_t sequence_number;
     char data[1024];
     uint16_t data_length;
 }__attribute__((packed));

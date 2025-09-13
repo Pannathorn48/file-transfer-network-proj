@@ -1,4 +1,4 @@
-#include "headers/message.h"
+#include "message.h"
 #include <string.h>
 
 MessageQueue* create_message_queue() {
