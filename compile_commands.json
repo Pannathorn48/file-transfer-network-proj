@@ -1,0 +1,47 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-I./headers",
+      "-c",
+      "-o",
+      "./bin/server_handler.o",
+      "./cores/server/server_handler.c"
+    ],
+    "directory": "/mnt/c/Users/Nestggaass/Desktop/Education/Year 3 term 1/NETWORK/file-transfer-network-proj",
+    "file": "/mnt/c/Users/Nestggaass/Desktop/Education/Year 3 term 1/NETWORK/file-transfer-network-proj/cores/server/server_handler.c",
+    "output": "/mnt/c/Users/Nestggaass/Desktop/Education/Year 3 term 1/NETWORK/file-transfer-network-proj/bin/server_handler.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-Wextra",
+      "-I./headers",
+      "-c",
+      "-o",
+      "./bin/server.o",
+      "./cores/server/main.c"
+    ],
+    "directory": "/mnt/c/Users/Nestggaass/Desktop/Education/Year 3 term 1/NETWORK/file-transfer-network-proj",
+    "file": "/mnt/c/Users/Nestggaass/Desktop/Education/Year 3 term 1/NETWORK/file-transfer-network-proj/cores/server/main.c",
+    "output": "/mnt/c/Users/Nestggaass/Desktop/Education/Year 3 term 1/NETWORK/file-transfer-network-proj/bin/server.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-c",
+      "-Wall",
+      "-Wextra",
+      "-I./headers",
+      "-o",
+      "./bin/client",
+      "./cores/client/main.c"
+    ],
+    "directory": "/mnt/c/Users/Nestggaass/Desktop/Education/Year 3 term 1/NETWORK/file-transfer-network-proj",
+    "file": "/mnt/c/Users/Nestggaass/Desktop/Education/Year 3 term 1/NETWORK/file-transfer-network-proj/cores/client/main.c",
+    "output": "/mnt/c/Users/Nestggaass/Desktop/Education/Year 3 term 1/NETWORK/file-transfer-network-proj/bin/client"
+  }
+]
