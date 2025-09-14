@@ -1,16 +1,13 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include "connection.h"
 
 #define BUFFER_SIZE 1024
 #define PORT 8080
 #define INITIAL_QUEUE_CAPACITY 10
 
-typedef struct message_t{
-    // 24 bit for sequence number and the rest for other flags
-    uint32_t flags;
-    char data[BUFFER_SIZE];
-    size_t dataLen;
-} Message;
+typedef struct message Message;
 
 // typedef struct node_t{
 //     Message* msg;
