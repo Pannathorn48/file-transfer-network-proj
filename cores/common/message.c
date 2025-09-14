@@ -1,3 +1,4 @@
+// #include "../../headers/message.h"
 #include "message.h"
 #include <string.h>
 
@@ -34,7 +35,7 @@ Message* dequeue_message(MessageQueue* queue) {
 }
 
 MessageQueue* senderMessages = NULL;
-MessageQueue* recieverMessages = NULL;
+MessageQueue* receiverMessages = NULL;
 
 
 MessageQueue* segment_file(const char* filename) {
@@ -50,9 +51,9 @@ MessageQueue* segment_file(const char* filename) {
     senderMessages->size = 0;
     senderMessages->front = 0;
     Message* metadata = (Message*)malloc(sizeof(Message));
-    metadata->flags = 0x10000000; // Metadata flag
-    // metadata->dataLen = strlen(filename) + 4; // +1 for null terminator and 3 for [c]
-    // memcpy(metadata->data, filename, metadata->dataLen);
+    // metadata->flags = 0x10000000; // Metadata flag
+    HDR_SET_META(metadata->flags);
+
     sprintf(metadata->data, "[c]%s", filename);
     enqueue_message(senderMessages, metadata);
     Message* tmp = NULL;
@@ -65,60 +66,55 @@ MessageQueue* segment_file(const char* filename) {
             fclose(file);
             return NULL;   
         }
-        tmp->flags = seqNum & 0xFFFFFF; // Store only the lower 24 bits
+        // tmp->flags = seqNum & 0xFFFFFF; // Store only the lower 24 bits
+        HDR_SET_SEQ(tmp->flags, seqNum);
         memcpy(tmp->data, buffer, bytesRead);
-        tmp->dataLen = bytesRead;
+        tmp->data_length = bytesRead;
         enqueue_message(senderMessages, tmp);
         seqNum++;
     }
-    // (senderMessages->head)[0]->dataLen = senderMessages->capacity;
     fclose(file);
     return senderMessages;
 }
 void sync_message_queue(Message* msg) {
-    if (!msg || !(msg->flags & 0x10000000)) {
+    if (!msg || !(HDR_GET_META(msg->flags))) {
         perror("Invalid metadata message for sync");
         return;
     }
 
-    if (recieverMessages == NULL) {
-        recieverMessages = create_message_queue();
+    if (receiverMessages == NULL) {
+        receiverMessages = create_message_queue();
     }
 
-    recieverMessages->capacity = msg->dataLen;
-
-    // while(recieverMessages->size >= recieverMessages->capacity) {
-    //     recieverMessages->capacity *= 2;
-    //     recieverMessages->head = (Message*)realloc(recieverMessages->head, recieverMessages->capacity * sizeof(Message));
-    // }
-    recieverMessages->front = 0;
-    recieverMessages->size = 0;
-    enqueue_message(recieverMessages, msg);
+    receiverMessages->capacity = msg->data_length;
+    receiverMessages->front = 0;
+    receiverMessages->size = 0;
+    enqueue_message(receiverMessages, msg);
 
 }
 
 void assemble_file() {
     Message* msg;
-    recieverMessages->front = 0;
-    msg = dequeue_message(recieverMessages);
-    if (!msg || !(msg->flags & 0x10000000)) {
+    receiverMessages->front = 0;
+    msg = dequeue_message(receiverMessages);
+    if (!msg || !(HDR_GET_META(msg->flags))) {
         perror("Invalid metadata message for assembling file");
         return;
     }
     const char* filename = msg->data;
-    FILE *file = fopen(filename, "a");
+    FILE *file = fopen(filename, "ab");
     if (!file) {
         perror("Failed to open file for writing");
         return;
     }
-    printf("Reassembling file from %zu messages...\n", recieverMessages->size - 1);
-    printf("Queue's capacity: %zu\n", recieverMessages->capacity);
-    while ((msg = dequeue_message(recieverMessages)) != NULL) {
-        fwrite(msg->data, 1, msg->dataLen, file);
+    printf("Reassembling file from %zu messages...\n", receiverMessages->size - 1);
+    printf("Queue's capacity: %zu\n", receiverMessages->capacity);
+    while ((msg = dequeue_message(receiverMessages)) != NULL) {
+        fwrite(msg->data, 1, msg->data_length, file);
         // free(msg);
     }
     fclose(file);
-    recieverMessages->size = 0;
-    recieverMessages->front = 0;
+    receiverMessages->size = 0;
+    receiverMessages->front = 0;
     printf("File %s reassembled successfully.\n", filename);
 }
