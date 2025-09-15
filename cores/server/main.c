@@ -62,14 +62,7 @@ int main(){
         }
 
         if (send_file(msg.data, sock, client) > 0) {
-           memset(&msg, 0, sizeof(msg));
-            // msg.header_flags = HDR_SET_STATUS(msg.header_flags , 1);
-            msg.data_length = 0;
-            if (sendto(sock, &msg, sizeof(msg), 0, (struct sockaddr *)&client, client_len) < 0)
-            {
-                perror("sendto failed");
-            }
-            continue; 
+            continue;
         }
         
     }

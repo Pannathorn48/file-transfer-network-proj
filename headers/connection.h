@@ -28,6 +28,13 @@
 #define HDR_FLAG_FIN         0x10000000u  /* bit 28 */
 #define HDR_STATUS_MASK      0x0F000000u  /* bits 27-24 */
 #define HDR_SEQ_MASK         0x00FFFFFFu  /* bits 23-0  */
+#define HDR_ERR_MASK         0x0F000000u  /* bits 23-0  */
+
+/* Error flag */
+#define HDR_FLAG_SUCC        0x00000000u /* 0000 */
+#define HDR_ERR_FNF          0x08000000u /* 1000 */
+#define HDR_ERR_SUCC         0x09000000u /* 1001 */
+#define HDR_ERR_NPM          0x0A000000u /* 1010 */
 
 /* Shifts */
 #define HDR_STATUS_SHIFT     24

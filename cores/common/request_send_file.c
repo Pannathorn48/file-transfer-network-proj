@@ -20,8 +20,12 @@ int send_file(char filePath[], int sock, struct sockaddr_in client)
     {
         printf("File not found: %s\n", filePath);
         memset(&msg, 0, sizeof(msg));
-        msg.flags = MSG_ERR;
+        msg.header_flags |= HDR_ERR_FNF;
         msg.data_length = 0;
+        if (sendto(sock, &msg, sizeof(msg), 0, (struct sockaddr *)&client, client_len) < 0)
+        {
+            perror("sendto failed");
+        }
         return 1;
     }
     else
@@ -33,7 +37,7 @@ int send_file(char filePath[], int sock, struct sockaddr_in client)
 
             if (bytes_read > 0)
             {
-                msg.flags = MSG_DATA;
+                HDR_SET_ACK(msg.header_flags, HDR_ACK_NONE);
                 msg.data_length = bytes_read;
                 if (sendto(sock, &msg, sizeof(msg), 0, (struct sockaddr *)&client, client_len) < 0)
                 {
@@ -45,7 +49,7 @@ int send_file(char filePath[], int sock, struct sockaddr_in client)
             if (bytes_read < (int)sizeof(msg.data))
             {
                 memset(&msg, 0, sizeof(msg));
-                msg.flags = MSG_EOF;
+                HDR_SET_FIN(msg.header_flags);
                 msg.data_length = 0;
                 if (sendto(sock, &msg, sizeof(msg), 0, (struct sockaddr *)&client, client_len) < 0)
                 {
@@ -63,7 +67,7 @@ int send_file(char filePath[], int sock, struct sockaddr_in client)
             perror("recvfrom failed");
         }
 
-        if (msg.flags & MSG_ACK)
+        if (HDR_GET_ACK(msg.header_flags) & HDR_ACK_ACK)
         {
             printf("Successfully send the file to the client\n");
         }
@@ -81,7 +85,7 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
     strncat(serverPath, fileName, sizeof(serverPath) - strlen(serverPath) - 1);
     strncpy(msg.data, serverPath, sizeof(msg.data));
 
-    msg.flags = MSG_DATA;
+    HDR_SET_ACK(msg.header_flags, HDR_ACK_NONE);
     msg.data_length = strlen(serverPath);
 
     if (sendto(sock, &msg, sizeof(msg), 0, (struct sockaddr *)&server, sizeof(server)) < 0)
@@ -111,23 +115,23 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
             perror("recvfrom failed");
             continue;
         }
-        if (msg.flags & MSG_ERR)
+        if (!((msg.header_flags & HDR_ERR_MASK) ^ HDR_ERR_FNF))
         {
             memset(&msg, 0, sizeof(msg));
-            msg.flags = MSG_ACK;
+            HDR_SET_ACK(msg.header_flags, HDR_ACK_ACK);
             msg.data_length = 0;
             sendto(sock, &msg, sizeof(msg), 0,
                    (struct sockaddr *)&server, sizeof(server));
-            printf("Failed received the file from the server\n");
+            printf("Failed received the file from the server, File not found\n");
             remove(clientPath);
             break;
         }
         fwrite(msg.data, 1, msg.data_length, fp);
 
-        if (msg.flags & MSG_EOF)
+        if (HDR_GET_FIN(msg.header_flags))
         {
             memset(&msg, 0, sizeof(msg));
-            msg.flags = MSG_ACK;
+            HDR_SET_ACK(msg.header_flags, HDR_ACK_ACK);
             msg.data_length = 0;
             sendto(sock, &msg, sizeof(msg), 0,
                    (struct sockaddr *)&server, sizeof(server));

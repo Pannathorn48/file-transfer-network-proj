@@ -31,7 +31,7 @@ int main(){
         }
 
         fileName[strcspn(fileName, "\n")] = '\0';
-        HDR_SET_ACK(msg.header_flags , HDR_ACK_NONE)
+        HDR_SET_ACK(msg.header_flags , HDR_ACK_NONE);
 
         if (strcmp(msg.data, "quit") == 0) {
             break;
