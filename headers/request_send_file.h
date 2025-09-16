@@ -1,2 +1,3 @@
-int send_file(char [], int , struct sockaddr_in );
-int request_file(char [], int, struct sockaddr_in);
+#ifndef REQUEST_SEND_FILE_H
+#define REQUEST_SEND_FILE_H
+#endif

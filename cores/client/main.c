@@ -31,21 +31,21 @@ int main(){
         }
 
         fileName[strcspn(fileName, "\n")] = '\0';
-        HDR_SET_ACK(msg.header_flags , HDR_ACK_NONE);
+        HDR_SET_ACK(msg.flags , HDR_ACK_NONE);
 
         if (strcmp(msg.data, "quit") == 0) {
             break;
         }
 
-        if(sendto(sock, &msg, sizeof(msg), 0, (struct sockaddr*)&server, sizeof(server)) < 0){
-            perror("sendto failed");
-            break;
-        }
+        //if(sendto(sock, &msg, sizeof(msg), 0, (struct sockaddr*)&server, sizeof(server)) < 0){
+        //    perror("sendto failed");
+        //    break;
+        //}
 
-        int len = recvfrom(sock, &msg, sizeof(msg), 0, NULL, NULL);
-        if (len > 0 && HDR_GET_ACK(msg.header_flags) == HDR_ACK_ACK){
-            printf("ACK!\n");
-        }
+        //int len = recvfrom(sock, &msg, sizeof(msg), 0, NULL, NULL);
+        //if (len > 0 && HDR_GET_ACK(msg.flags) == HDR_ACK_ACK){
+        //    printf("ACK!\n");
+        //}
 
         // After receive ACK from server start send file name to request file from server
         request_file(fileName, sock, server);

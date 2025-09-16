@@ -1,3 +1,7 @@
+#ifndef CONNECTION_H
+#define CONNECTION_H
+
+
 /* ============================================================================
  * 32-bit Header Layout (field: header_flags)
  *
@@ -107,3 +111,6 @@ short validate_header(struct message* msg);
 
 
  int init_client(char *ip , char* port);
+
+
+#endif

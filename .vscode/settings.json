@@ -1,6 +1,12 @@
 {
     "files.associations": {
-        "inet.h": "c"
+        "inet.h": "c",
+        "xutility": "c",
+        "message.h": "c",
+        "stdio.h": "c",
+        "connection.h": "c",
+        "initializer_list": "c",
+        "utility": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
