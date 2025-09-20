@@ -68,6 +68,7 @@
 #define HDR_SET_SEQ(h,seq)   do { (h) = ((h) & ~HDR_SEQ_MASK) | ((uint32_t)(seq) & HDR_SEQ_MASK); } while(0)
 
 struct message {
+    uint16_t checksum;
     uint32_t flags; /* Packed 32-bit header described above */
     char data[1024];       /* Payload buffer */
     unsigned short data_length; /* Number of valid bytes in data */
