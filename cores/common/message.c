@@ -125,13 +125,13 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
     if (len < 0)
     {
         perror("recvfrom failed");
-        return;
+        return 1;
     }
 
     if (!receiverMessage || !(HDR_GET_META(receiverMessage->flags)))
     {
         perror("Invalid metadata message for assembling file");
-        return;
+        return 1;
     }
 
     printf("RECEIVE META DATA \n");
@@ -139,10 +139,10 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
     if (!file)
     {
         perror("Failed to open file for writing");
-        return;
+        return 1;
     }
     // printf("Still good?\n");
-    memset(receiverMessage, 0, sizeof(receiverMessage));
+    memset(receiverMessage, 0, sizeof(*receiverMessage));
     // printf("Still good? Hello?\n");
     HDR_SET_ACK(msg.flags, HDR_ACK_ACK);
     // printf("Still good? Hello? Answer me.\n");
@@ -174,7 +174,7 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
         }
 
         memset(&msg, 0, sizeof(msg));
-        memset(receiverMessage, 0, sizeof(receiverMessage));
+        memset(receiverMessage, 0, sizeof(*receiverMessage));
         HDR_SET_ACK(msg.flags, HDR_ACK_ACK);
         msg.data_length = 0;
         sendto(sock, &msg, sizeof(msg), 0,
