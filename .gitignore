@@ -66,6 +66,7 @@ dkms.conf
 *.doc
 *.docx
 *.pdf
+*.txt
 
 # for bin
 /bin
