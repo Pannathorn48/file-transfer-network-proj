@@ -14,7 +14,8 @@ int main(int argc , char *argv[]){
     }
     int sock;
     struct message msg;
-    struct sockaddr_in server;
+    struct sockaddr_in server, client_addr; // Declare client_addr
+    socklen_t client_addr_len = sizeof(client_addr);
 
     sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0) {
@@ -50,32 +51,19 @@ int main(int argc , char *argv[]){
 
     while(1){
         char fileName[1024];
-        memset(&msg , 0 , sizeof(msg));
-        printf("Enter message: ");
-        if(!fgets(fileName, sizeof(msg.data), stdin)){
+        printf("Enter filename to request (or 'quit' to exit): ");
+        if (!fgets(fileName, sizeof(fileName), stdin)) {
             break;
         }
 
         fileName[strcspn(fileName, "\n")] = '\0';
-        HDR_SET_ACK(msg.flags , HDR_ACK_NONE);
 
-        if (strcmp(msg.data, "quit") == 0) {
+        if (strcmp(fileName, "quit") == 0) {
             break;
         }
 
-        //if(sendto(sock, &msg, sizeof(msg), 0, (struct sockaddr*)&server, sizeof(server)) < 0){
-        //    perror("sendto failed");
-        //    break;
-        //}
-
-        //int len = recvfrom(sock, &msg, sizeof(msg), 0, NULL, NULL);
-        //if (len > 0 && HDR_GET_ACK(msg.flags) == HDR_ACK_ACK){
-        //    printf("ACK!\n");
-        //}
-
-        // After receive ACK from server start send file name to request file from server
-        request_file(fileName, sock, server);
-        
+        // Call the updated request_file function with the correct arguments
+        request_file(fileName, sock, server, client_addr);
     }
 
     close(sock);

@@ -19,3 +19,5 @@
 
 // ERR_INVALID_HANDSHAKE : invalid handshake packet
 #define ERR_INVALID_HANDSHAKE -7
+// ERR_CHECKSUM_FAIL : checksum validation failed
+#define ERR_CHECKSUM_FAIL -8

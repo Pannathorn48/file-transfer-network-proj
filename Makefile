@@ -25,6 +25,3 @@ message.o:
 clear:
 	@echo "clear /bin"
 	@rm -rf ./bin/*
-clear-o:
-	@echo "clear .o files"
-	@rm -rf ./bin/*.o

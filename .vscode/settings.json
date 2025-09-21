@@ -6,7 +6,9 @@
         "stdio.h": "c",
         "connection.h": "c",
         "initializer_list": "c",
-        "utility": "c"
+        "utility": "c",
+        "stdbool.h": "c",
+        "checksum.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
