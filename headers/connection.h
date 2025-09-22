@@ -1,6 +1,13 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
+#include <stdint.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/time.h>
+#include <string.h>
+#include <stdio.h>
+#include "error.h"
 
 /* ============================================================================
  * 32-bit Header Layout (field: header_flags)
@@ -23,8 +30,6 @@
  *
  *  Use the macros below to set/extract each sub-field safely.
  * ============================================================================ */
-
-#include <stdint.h>
 
 /* Bit masks */
 #define HDR_FLAG_META        0x80000000u  /* bit 31 */
@@ -80,20 +85,6 @@ struct message {
  *  int is_meta     = HDR_GET_META(msg->header_flags);
  */
 
-/**
- * @brief Checks a message for an ACK or NACK pattern.
- *
- * This function searches the input string for patterns indicating
- * an Acknowledge (ACK) or Negative Acknowledge (NACK).
- *
- * @param str :  The input string to be checked.
- * @return Returns:
- *   - 0 if an ACK is found.
- *   - 1 if a NACK is found.
- *   - -1 if neither an ACK nor a NACK is found.
- */
-short validate_header(struct message* msg);
-
 
 /**
  * @brief Create new socket with given port
@@ -111,7 +102,8 @@ short validate_header(struct message* msg);
  int new_connection(char* port , struct sockaddr_in* server);
 
 
- int init_client(char *ip , char* port);
+ int client_handle_handshake(int sock, struct message *msg , struct sockaddr_in server);
+ int server_handle_handshake(int sock, struct message *msg , struct sockaddr_in client);
 
 
 #endif

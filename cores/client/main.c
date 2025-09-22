@@ -6,9 +6,12 @@
 #include <unistd.h>
 #include "connection.h"
 #include "message.h"
-// #include "request_send_file.h"
 
-int main(){
+int main(int argc , char *argv[]){
+    if (argc != 3) {
+        perror("Require server IP address and port as argument");
+        exit(EXIT_FAILURE);
+    }
     int sock;
     struct message msg;
     struct sockaddr_in server;
@@ -20,8 +23,30 @@ int main(){
     }
 
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = inet_addr("127.0.0.1");
-    server.sin_port = htons(8080);
+    server.sin_addr.s_addr = inet_addr(argv[1]);
+    server.sin_port = htons(atoi(argv[2]));
+
+    // Perform handshake with server
+    int handshake_status = client_handle_handshake(sock, &msg, server);
+    if (handshake_status != 0) {
+        switch (handshake_status)
+        {
+        case ERR_SEND_FAIL:
+            fprintf(stderr, "Error: Failed to send handshake message\n");
+            break;
+        case ERR_RECV_FAIL:
+            fprintf(stderr, "Error: Failed to receive handshake response\n");
+            break;
+        case ERR_INVALID_HANDSHAKE:
+            fprintf(stderr, "Error: Invalid handshake response\n");
+            break;
+        default:
+            fprintf(stderr, "Error: Unknown handshake error\n");
+            break;
+        }
+        close(sock);
+        exit(EXIT_FAILURE);
+    }
 
     while(1){
         char fileName[1024];

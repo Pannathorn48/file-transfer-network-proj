@@ -104,7 +104,8 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
 
     strncpy(msg.data, fileName, sizeof(msg.data));
 
-    HDR_SET_ACK(msg.flags, HDR_ACK_NONE);
+    HDR_SET_ACK(msg.flags, HDR_ACK_ACK);
+    HDR_SET_SEQ(msg.flags, 1);
     msg.data_length = strlen(fileName);
 
     printf("REQUEST: %s\n", msg.data);

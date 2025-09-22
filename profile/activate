@@ -4,15 +4,14 @@ NETWORK_ACTIVATE=true
 server(){
     make server
     echo "------------------------"
-    ./bin/server
+    ./bin/server "$@"
 }
 
 client(){
     make client
     echo "------------------------"
-    ./bin/client
+    ./bin/client "$@"
 }
-
 
 deactivate() {
        if [ "$NETWORK_ACTIVATE" = "true" ]; then
@@ -25,3 +24,33 @@ deactivate() {
            echo "No network environment is active."
        fi
 }
+
+# Parse command line arguments
+case "$1" in
+    "server")
+        shift
+        server "$@"
+        ;;
+    "client")
+        shift
+        client "$@"
+        ;;
+    "deactivate")
+        deactivate
+        ;;
+    "help"|"-h"|"--help")
+        echo "Usage: $0 {server|client|deactivate|help}"
+        echo "  server    - Build and run the server with optional arguments"
+        echo "  client    - Build and run the client with optional arguments"
+        echo "  deactivate - Deactivate the network environment"
+        echo "  help      - Show this help message"
+        ;;
+    "")
+        # If no arguments, just source the file (current behavior)
+        ;;
+    *)
+        echo "Unknown command: $1"
+        echo "Use '$0 help' for usage information"
+        exit 1
+        ;;
+esac
