@@ -101,8 +101,34 @@ struct message {
  */
  int new_connection(char* port , struct sockaddr_in* server);
 
-
+/**
+ * @brief Handle client-side handshake process
+ *
+ * This function manages the handshake procedure from the client's perspective,
+ * establishing communication with the server and exchanging initial protocol messages.
+ *
+ * @param sock : client socket file descriptor
+ * @param msg : message structure for handshake communication
+ * @param server : server address information struct
+ * @return Returns:
+ *   - 0 on successful handshake completion
+ *   - negative number if handshake fails or an error occurs
+ */
  int client_handle_handshake(int sock, struct message *msg , struct sockaddr_in server);
+
+/**
+ * @brief Handle server-side handshake process
+ *
+ * This function manages the handshake procedure from the server's perspective,
+ * accepting and responding to client connection requests and protocol initialization.
+ *
+ * @param sock : server socket file descriptor
+ * @param msg : message structure for handshake communication
+ * @param client : client address information struct
+ * @return Returns:
+ *   - 0 on successful handshake completion
+ *   - negative number if handshake fails or an error occurs
+ */
  int server_handle_handshake(int sock, struct message *msg , struct sockaddr_in client);
 
 
