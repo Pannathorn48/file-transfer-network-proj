@@ -41,7 +41,7 @@ void segment_file(const char *filename, int sock, struct sockaddr_in client, str
     HDR_SET_META(msg.flags);
     sprintf(msg.data, "[c]%s", filename);
     msg.data_length = strlen(msg.data);
-    set_message_checksum(&msg, &server, &client);
+    set_message_checksum(&msg);
     send_message(&msg, sock, client);
 
     size_t bytesRead;
@@ -54,7 +54,7 @@ void segment_file(const char *filename, int sock, struct sockaddr_in client, str
         memcpy(msg.data, buffer, bytesRead);
         msg.data_length = bytesRead;
         
-        set_message_checksum(&msg, &server, &client);
+        set_message_checksum(&msg);
         send_message(&msg, sock, client);
         
         seqNum++;
@@ -64,7 +64,7 @@ void segment_file(const char *filename, int sock, struct sockaddr_in client, str
     memset(&msg, 0, sizeof(msg));
     HDR_SET_FIN(msg.flags);
     msg.data_length = 0;
-    set_message_checksum(&msg, &server, &client);
+    set_message_checksum(&msg);
     send_message(&msg, sock, client);
 
     fclose(file);
@@ -102,7 +102,7 @@ int request_file(char fileName[], int sock, struct sockaddr_in server, struct so
         // Must calculate data_length before checksum validation
         received_msg.data_length = len - (sizeof(received_msg.checksum) + sizeof(received_msg.flags));
 
-        if (validate_message_checksum(&received_msg, len, &server, &client_addr) != 0) {
+        if (validate_message_checksum(&received_msg, len) != 0) {
             fprintf(stderr, "Checksum validation failed! Packet dropped.\n");
             continue;
         }
@@ -131,7 +131,7 @@ int request_file(char fileName[], int sock, struct sockaddr_in server, struct so
             memset(&msg, 0, sizeof(msg));
             HDR_SET_ACK(msg.flags, HDR_ACK_ACK);
             msg.data_length = 0;
-            set_message_checksum(&msg, &client_addr, &server);
+            set_message_checksum(&msg);
             send_message(&msg, sock, server);
             
             break;
@@ -141,7 +141,7 @@ int request_file(char fileName[], int sock, struct sockaddr_in server, struct so
         memset(&msg, 0, sizeof(msg));
         HDR_SET_ACK(msg.flags, HDR_ACK_ACK);
         msg.data_length = 0;
-        set_message_checksum(&msg, &client_addr, &server);
+        set_message_checksum(&msg);
         send_message(&msg, sock, server);
     }
     

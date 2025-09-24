@@ -1,4 +1,3 @@
-// cores/common/checksum.c
 #include <stdio.h>
 #include <string.h>
 #include <netinet/in.h>
@@ -28,68 +27,27 @@ uint16_t calculate_checksum(const void *data, size_t len) {
     return (uint16_t)~sum;
 }
 
-// Helper function to calculate the pseudo-header sum
-uint32_t add_pseudo_header_sum(struct sockaddr_in *src_addr, struct sockaddr_in *dest_addr, uint16_t udp_len) {
-    uint32_t sum = 0;
-    
-    // Add source and destination IP addresses
-    sum += (src_addr->sin_addr.s_addr >> 16) & 0xFFFF;
-    sum += src_addr->sin_addr.s_addr & 0xFFFF;
-    sum += (dest_addr->sin_addr.s_addr >> 16) & 0xFFFF;
-    sum += dest_addr->sin_addr.s_addr & 0xFFFF;
-
-    // Add protocol and UDP length
-    sum += htons(IPPROTO_UDP);
-    sum += htons(udp_len);
-
-    return sum;
-}
-
-// Function to set the checksum on a message
-void set_message_checksum(struct message *msg, struct sockaddr_in *src_addr, struct sockaddr_in *dest_addr) {
-    // The length of the entire UDP datagram (flags + data)
-    uint16_t total_udp_len = sizeof(msg->flags) + msg->data_length;
-
-    // Calculate the pseudo-header sum
-    uint32_t sum = add_pseudo_header_sum(src_addr, dest_addr, total_udp_len);
-
+// Function to set the checksum on a message without a pseudo-header
+void set_message_checksum(struct message *msg) {
     // Temporarily zero out the checksum field to calculate it
     msg->checksum = 0;
 
-    // Calculate checksum over the flags and data
-    sum += calculate_checksum((const void *)&msg->flags, sizeof(msg->flags));
-    sum += calculate_checksum((const void *)&msg->data, msg->data_length);
+    // Calculate checksum over the entire message structure (flags + data)
+    uint16_t calculated_checksum = calculate_checksum((const void *)&msg->flags, sizeof(msg->flags) + msg->data_length);
 
-    while (sum >> 16) {
-        sum = (sum & 0xFFFF) + (sum >> 16);
-    }
-    
-    msg->checksum = (uint16_t)~sum;
+    msg->checksum = calculated_checksum;
 }
 
 // Function to validate the checksum of a received message
-int validate_message_checksum(struct message *msg, int received_len, struct sockaddr_in *src_addr, struct sockaddr_in *dest_addr) {
+int validate_message_checksum(struct message *msg, int received_len) {
     // Store the original checksum
     uint16_t original_checksum = msg->checksum;
 
     // Temporarily zero out the checksum field to calculate it
     msg->checksum = 0;
 
-    // The length of the UDP payload (flags + data)
-    uint16_t total_udp_len = received_len - sizeof(msg->checksum);
-
-    // Calculate the pseudo-header sum
-    uint32_t sum = add_pseudo_header_sum(src_addr, dest_addr, total_udp_len);
-
-    // Calculate checksum over flags and data
-    sum += calculate_checksum((const void *)&msg->flags, sizeof(msg->flags));
-    sum += calculate_checksum((const void *)&msg->data, msg->data_length);
-
-    while (sum >> 16) {
-        sum = (sum & 0xFFFF) + (sum >> 16);
-    }
-
-    uint16_t calculated_checksum = (uint16_t)~sum;
+    // Calculate the checksum over the flags and data
+    uint16_t calculated_checksum = calculate_checksum((const void *)&msg->flags, received_len - sizeof(msg->checksum));
 
     // Restore the original checksum
     msg->checksum = original_checksum;
