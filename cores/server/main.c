@@ -7,6 +7,8 @@
 #include "connection.h"
 #include "error.h"
 #include "message.h"
+#include "checksum.h"
+#include <sys/types.h>
 
 int main(int argc , char *argv[]) {
     if (argc != 2){
@@ -32,15 +34,22 @@ int main(int argc , char *argv[]) {
         perror("Error : port is in use");
         exit(EXIT_FAILURE);
     }
-    }
-
 
     while (1)
     {
         memset(&msg, 0, sizeof(msg));
-        int fileNameRequestlen = recvfrom(sock, &msg, sizeof(msg), 0, (struct sockaddr *)&client, &client_len);
-        if (fileNameRequestlen < 0) {
+        int received_len = recvfrom(sock, &msg, sizeof(msg), 0, (struct sockaddr *)&client, &client_len);
+        if (received_len < 0) {
             perror("recvfrom failed");
+            continue;
+        }
+
+        // Calculate the data length from the received packet size
+        msg.data_length = received_len - (sizeof(msg.checksum) + sizeof(msg.flags));
+        
+        // Validate the checksum of the incoming request
+        if (validate_message_checksum(&msg, received_len) != 0) {
+            fprintf(stderr, "Checksum validation failed! Packet dropped.\n");
             continue;
         }
 
@@ -65,15 +74,12 @@ int main(int argc , char *argv[]) {
                 }
             }
         } else if (msg.data_length > 0) {
-            // Handle file request - for now just print the filename
-            printf("File requested: %.*s\n", msg.data_length, msg.data);
-            // TODO: Implement segment_file function
-            // segment_file(msg.data, sock, client);
+            // Correct call to segment_file with all required arguments
+            segment_file(msg.data, sock, client, server);
         } else {
             perror("Invalid request - no data");
             continue;
         }
     }
-
     return 0;
 }

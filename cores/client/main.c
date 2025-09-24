@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include "connection.h"
 #include "message.h"
+#include "checksum.h"
+#include <sys/types.h>
 
 int main(int argc , char *argv[]){
     if (argc != 3) {
@@ -14,7 +16,7 @@ int main(int argc , char *argv[]){
     }
     int sock;
     struct message msg;
-    struct sockaddr_in server, client_addr; // Declare client_addr
+    struct sockaddr_in server, client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
 
     sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -26,6 +28,13 @@ int main(int argc , char *argv[]){
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = inet_addr(argv[1]);
     server.sin_port = htons(atoi(argv[2]));
+
+    // Get the client's local IP address for checksum calculation
+    if (getsockname(sock, (struct sockaddr*)&client_addr, &client_addr_len) < 0) {
+        perror("getsockname failed");
+        close(sock);
+        exit(EXIT_FAILURE);
+    }
 
     // Perform handshake with server
     int handshake_status = client_handle_handshake(sock, &msg, server);

@@ -12,23 +12,23 @@
 /* ============================================================================
  * 32-bit Header Layout (field: header_flags)
  *
- *  Bit indices (MSB -> LSB):
- *   31        30 29        28        27 26 25 24        23 ................. 0
- *  +-----------+-----------+---------+------------------+--------------------+
- *  | META_DATA | ACK CODE  |  FIN    |   STATUS CODE    |   SEQUENCE NUMBER  |
- *  |   (1b)    |  (2 bits) |  (1b)   |     (4 bits)     |      (24 bits)     |
- *  +-----------+-----------+---------+------------------+--------------------+
+ * Bit indices (MSB -> LSB):
+ * 31        30 29        28        27 26 25 24        23 ................. 0
+ * +-----------+-----------+---------+------------------+--------------------+
+ * | META_DATA | ACK CODE  |  FIN    |   STATUS CODE    |   SEQUENCE NUMBER  |
+ * |   (1b)    |  (2 bits) |  (1b)   |     (4 bits)     |      (24 bits)     |
+ * +-----------+-----------+---------+------------------+--------------------+
  *
- *  Field Groups:
- *    META_DATA (bit 31)          : 1 = this packet carries only metadata (e.g., filename, total parts)
- *    ACK CODE (bits 30..29)      : 00 = NONE, 01 = ACK, 10 = NACK, 11 = RESERVED (future)
- *    FIN (bit 28)                : 1 = final packet / stream completion
- *    STATUS CODE (bits 27..24)   : 4-bit application status / error code (0-15)
- *    SEQUENCE NUMBER (23..0)     : 24-bit unsigned sequence value (0 - 16,777,215)
+ * Field Groups:
+ * META_DATA (bit 31)          : 1 = this packet carries only metadata (e.g., filename, total parts)
+ * ACK CODE (bits 30..29)      : 00 = NONE, 01 = ACK, 10 = NACK, 11 = RESERVED (future)
+ * FIN (bit 28)                : 1 = final packet / stream completion
+ * STATUS CODE (bits 27..24)   : 4-bit application status / error code (0-15)
+ * SEQUENCE NUMBER (23..0)     : 24-bit unsigned sequence value (0 - 16,777,215)
  *
- *  Packing Order (MSB->LSB): | META_DATA | ACK | FIN | STATUS | SEQ |
+ * Packing Order (MSB->LSB): | META_DATA | ACK | FIN | STATUS | SEQ |
  *
- *  Use the macros below to set/extract each sub-field safely.
+ * Use the macros below to set/extract each sub-field safely.
  * ============================================================================ */
 
 /* Bit masks */
@@ -80,9 +80,9 @@ struct message {
 } __attribute__((packed));
 
 /* Example unpack pattern:
- *  uint8_t  status = HDR_GET_STATUS(msg->header_flags);
- *  uint32_t seq    = HDR_GET_SEQ(msg->header_flags);
- *  int is_meta     = HDR_GET_META(msg->header_flags);
+ * uint8_t  status = HDR_GET_STATUS(msg->header_flags);
+ * uint32_t seq    = HDR_GET_SEQ(msg->header_flags);
+ * int is_meta     = HDR_GET_META(msg->header_flags);
  */
 
 
@@ -96,10 +96,10 @@ struct message {
  * @param server : server infomation struct
  * @param client : client infomation struct
  * @return Returns:
- *   - negative number if an error occur
- *   -A socket file descriptor (positive number)
+ * - negative number if an error occur
+ * -A socket file descriptor (positive number)
  */
- int new_connection(char* port , struct sockaddr_in* server);
+int new_connection(char* port , struct sockaddr_in* server);
 
 /**
  * @brief Handle client-side handshake process
@@ -111,10 +111,10 @@ struct message {
  * @param msg : message structure for handshake communication
  * @param server : server address information struct
  * @return Returns:
- *   - 0 on successful handshake completion
- *   - negative number if handshake fails or an error occurs
+ * - 0 on successful handshake completion
+ * - negative number if handshake fails or an error occurs
  */
- int client_handle_handshake(int sock, struct message *msg , struct sockaddr_in server);
+int client_handle_handshake(int sock, struct message *msg , struct sockaddr_in server);
 
 /**
  * @brief Handle server-side handshake process
@@ -126,10 +126,26 @@ struct message {
  * @param msg : message structure for handshake communication
  * @param client : client address information struct
  * @return Returns:
- *   - 0 on successful handshake completion
- *   - negative number if handshake fails or an error occurs
+ * - 0 on successful handshake completion
+ * - negative number if handshake fails or an error occurs
  */
- int server_handle_handshake(int sock, struct message *msg , struct sockaddr_in client);
+int server_handle_handshake(int sock, struct message *msg , struct sockaddr_in client);
+
+/**
+ * @brief Checks a message for an ACK or NACK pattern.
+ *
+ * This function searches the input string for patterns indicating
+ * an Acknowledge (ACK) or Negative Acknowledge (NACK).
+ *
+ * @param str :  The input string to be checked.
+ * @return Returns:
+ * - 0 if an ACK is found.
+ * - 1 if a NACK is found.
+ * - -1 if neither an ACK nor a NACK is found.
+ */
+short validate_header(struct message* msg);
+
+int init_client(char *ip , char* port);
 
 
 #endif

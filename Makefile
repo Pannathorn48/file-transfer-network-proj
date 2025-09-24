@@ -1,27 +1,70 @@
+# Define the C compiler and flags
 CC = gcc
 CFLAGS = -Wall -Wextra -I./headers
+LDFLAGS = 
 
-build: clear server client clear-o
-server: server_connection.o server.o  message.o
+# Define object files for each program to improve clarity and reduce redundancy
+SERVER_OBJS = ./bin/server.o ./bin/server_connection.o ./bin/message.o ./bin/checksum.o ./bin/request_send_file.o
+CLIENT_OBJS = ./bin/client.o ./bin/client_connection.o ./bin/message.o ./bin/checksum.o ./bin/request_send_file.o
+
+# Define common build and clean rules
+.PHONY: all build clean test checksum_test
+all: build
+
+build: server client
+
+# Main targets for building the server and client executables
+server: $(SERVER_OBJS)
 	@echo "Compiling server"
-	$(CC) $(CFLAGS) ./bin/server.o ./bin/server_connection.o ./bin/message.o -o ./bin/server
-client: client_connection.o client.o  message.o
+	$(CC) $(CFLAGS) $(SERVER_OBJS) -o ./bin/server $(LDFLAGS)
+
+client: $(CLIENT_OBJS)
 	@echo "Compiling client"
-	$(CC) $(CFLAGS) ./bin/client.o ./bin/message.o ./bin/client_connection.o -o ./bin/client
-debug.o:
-	$(CC) $(CFLAGS) ./cores/common/debug.c -c -o ./bin/debug.o
-# request_send_file.o:
-# 	$(CC) $(CFLAGS) ./cores/common/request_send_file.c -c -o ./bin/request_send_file.o
-server_connection.o:
-	$(CC) $(CFLAGS) ./cores/server/connection.c -c -o ./bin/server_connection.o
-client_connection.o:
-	$(CC) $(CFLAGS) ./cores/client/connection.c -c -o ./bin/client_connection.o
-server.o:
-	$(CC) $(CFLAGS) ./cores/server/main.c -c -o ./bin/server.o
-client.o:
-	$(CC) $(CFLAGS) ./cores/client/main.c -c -o ./bin/client.o
-message.o:
-	$(CC) $(CFLAGS) ./cores/common/message.c -c -o ./bin/message.o
+	$(CC) $(CFLAGS) $(CLIENT_OBJS) -o ./bin/client $(LDFLAGS)
+
+# Rules for compiling individual object files with automatic dependency handling
+# Use automatic variables ($< for the prerequisite, $@ for the target) for cleaner rules
+./bin/server.o: ./cores/server/main.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+./bin/server_connection.o: ./cores/server/connection.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+./bin/client.o: ./cores/client/main.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+./bin/client_connection.o: ./cores/client/connection.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+./bin/message.o: ./cores/common/message.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+./bin/checksum.o: ./cores/common/checksum.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+./bin/request_send_file.o: ./cores/common/request_send_file.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Test target for checksum_test. It also needs the message and checksum object files.
+./bin/checksum_test.o: ./tests/checksum_test.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+checksum_test: ./bin/checksum_test.o ./bin/checksum.o ./bin/message.o
+	@echo "Compiling checksum test"
+	$(CC) $(CFLAGS) $^ -o ./bin/checksum_test $(LDFLAGS)
+
+test: checksum_test
+	@echo "Running tests..."
+	@./bin/checksum_test
+
+# Cleanup targets
 clear:
 	@echo "clear /bin"
 	@rm -rf ./bin/*
+
+clean: clear
+
+.PHONY: clear-o
+clear-o:
+	@echo "clear object files"
+	@rm -f ./bin/*.o
