@@ -10,6 +10,8 @@
 #include <sys/socket.h>
 #include "connection.h"
 #include "error.h"
+#include "checksum.h"
+
 
 #endif /* NETWORK_HEADERS_H */
 
@@ -49,7 +51,12 @@ int server_handle_handshake(int sock, struct message *msg , struct sockaddr_in c
     HDR_SET_ACK(msg->flags, HDR_ACK_ACK);
     HDR_SET_META(msg->flags);
     HDR_SET_SEQ(msg->flags, 0); // Initial sequence number
-    if (sendto(sock, msg, sizeof(*msg), 0, (struct sockaddr *)&client, client_len) < 0) {
+
+    set_message_checksum(msg); 
+
+    size_t handshake_size = sizeof(msg->checksum) + sizeof(msg->flags);
+
+    if (sendto(sock, msg, handshake_size, 0, (struct sockaddr *)&client, client_len) < 0) {
         perror("sendto failed");
         return ERR_SEND_FAIL;
     }

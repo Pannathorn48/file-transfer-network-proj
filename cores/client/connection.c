@@ -1,15 +1,22 @@
 #include "connection.h"
+#include "message.h"
+#include "checksum.h"
 
 
 int client_handle_handshake(int sock, struct message *msg , struct sockaddr_in server){
     unsigned int server_len = sizeof(server);
-    // Send META
+    
     memset(msg, 0, sizeof(*msg));
     msg->data_length = 0;
     HDR_SET_ACK(msg->flags, HDR_ACK_NONE);
     HDR_SET_META(msg->flags);
     HDR_SET_SEQ(msg->flags, 0); // Initial sequence number
-    if (sendto(sock, msg, sizeof(*msg), 0, (struct sockaddr *)&server, server_len) < 0) {
+
+    set_message_checksum(msg);
+
+    size_t handshake_size = sizeof(msg->checksum) + sizeof(msg->flags);
+
+    if (sendto(sock, msg, handshake_size, 0, (struct sockaddr *)&server, server_len) < 0) {
         perror("sendto failed");
         return ERR_SEND_FAIL;
     }
@@ -24,7 +31,6 @@ int client_handle_handshake(int sock, struct message *msg , struct sockaddr_in s
         return ERR_SOCKET_FAIL;
     }
 
-    // Wait for META-ACK
     memset(msg, 0, sizeof(*msg));
     int recv_len = recvfrom(sock, msg, sizeof(*msg), 0, (struct sockaddr *)&server, &server_len);
     if (recv_len < 0) {
@@ -32,11 +38,28 @@ int client_handle_handshake(int sock, struct message *msg , struct sockaddr_in s
         return ERR_RECV_FAIL;
     }
 
-    // Validate META-ACK
     if (!HDR_GET_META(msg->flags) || HDR_GET_ACK(msg->flags) != HDR_ACK_ACK || HDR_GET_SEQ(msg->flags) != 0) {
         return ERR_INVALID_HANDSHAKE;
     }
     printf("META-ACK received, handshake successful.\n");
-   // Handshake successful
-    return 0;
+
+
+
+    memset(msg, 0, sizeof(*msg));
+    msg->data_length = 0;
+    HDR_SET_ACK(msg->flags, HDR_ACK_ACK); 
+    HDR_CLR_META(msg->flags);            
+    HDR_SET_SEQ(msg->flags, 1);           
+
+    set_message_checksum(msg); 
+
+
+    size_t handshake_ack_size = sizeof(msg->checksum) + sizeof(msg->flags);
+
+    if (sendto(sock, msg, handshake_ack_size, 0, (struct sockaddr *)&server, server_len) < 0) {
+        perror("Final ACK sendto failed");
+        return ERR_SEND_FAIL;
+    }
+
+    return 0; 
 }
