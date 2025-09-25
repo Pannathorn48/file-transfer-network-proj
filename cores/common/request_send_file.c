@@ -8,21 +8,8 @@
 #include "message.h"
 #include "checksum.h"
 
-// Sends a message over a socket
-static int send_message(struct message *msg, int sock, struct sockaddr_in dest_addr)
-{
-    unsigned int dest_len = sizeof(dest_addr);
-    size_t packet_size = sizeof(msg->checksum) + sizeof(msg->flags) + msg->data_length;
 
-    if (sendto(sock, msg, packet_size, 0, (struct sockaddr *)&dest_addr, dest_len) < 0)
-    {
-        perror("sendto failed");
-        return 1;
-    }
-    return 0;
-}
-
-void send_file(const char* filename, int sock, struct sockaddr_in client, struct sockaddr_in server) {
+void segment_file(const char* filename, int sock, struct sockaddr_in client, struct sockaddr_in server) { 
     char buffer[BUFFER_SIZE];
     FILE *file = fopen(filename, "rb");
     if (!file) {
