@@ -77,6 +77,9 @@ int main(int argc , char *argv[]) {
             // Correct call to segment_file with all required arguments
             segment_file(msg.data, sock, client, server);
         } else {
+            if (validate_message_checksum(&msg, received_len) == 0) {
+                continue;
+            }
             perror("Invalid request - no data");
             continue;
         }
