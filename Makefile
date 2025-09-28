@@ -17,16 +17,6 @@ all: build
 
 # 'build' target relies on 'mkdir_bin' and then builds the executables
 build: mkdir_bin server client
-# 'build' target relies on 'mkdir_bin' and then builds the executables
-build: mkdir_bin server client
-
-# New rule to create the bin directory - idempotent
-mkdir_bin:
-	@mkdir -p ./bin
-
-# ---
-# Executable Targets
-# ---
 
 # New rule to create the bin directory - idempotent
 mkdir_bin:
@@ -38,11 +28,9 @@ mkdir_bin:
 
 server: $(SERVER_OBJS)
 	@echo "Linking server executable"
-	@echo "Linking server executable"
 	$(CC) $(CFLAGS) $(SERVER_OBJS) -o ./bin/server $(LDFLAGS)
 
 client: $(CLIENT_OBJS)
-	@echo "Linking client executable"
 	@echo "Linking client executable"
 	$(CC) $(CFLAGS) $(CLIENT_OBJS) -o ./bin/client $(LDFLAGS)
 
@@ -94,7 +82,6 @@ test: checksum_test
 
 # Clears all contents of the bin directory
 clear:
-	@echo "Clearing ./bin directory"
 	@echo "Clearing ./bin directory"
 	@rm -rf ./bin/*
 
