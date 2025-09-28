@@ -13,7 +13,7 @@ void timeout_handler(int signum) {
     if (signum == SIGALRM && g_status_ptr != NULL) {
         *g_status_ptr = CLIENT_NOT_CONN;
         // printf("Connection timed out. Status set to CLIENT_NOT_CONN.\n");
-        // un comment the above line for debugging
+        // Uncomment the above line for debugging
     }
 }
 
