@@ -1,6 +1,7 @@
 #include "connection.h"
 #include "message.h"
 #include "checksum.h"
+#include <signal.h>
 #include <unistd.h>
 
 

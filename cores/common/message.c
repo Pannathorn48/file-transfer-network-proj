@@ -92,13 +92,21 @@ int request_file(char fileName[], int sock, struct sockaddr_in server, struct so
 
     struct message received_msg;
     FILE *file = NULL;
+    uint32_t lastSEQ = 0x10000000u;
 
     while (1)
     {
         memset(&received_msg, 0, sizeof(received_msg));
         socklen_t server_len = sizeof(server);
         int len = recvfrom(sock, &received_msg, sizeof(received_msg), 0, (struct sockaddr *)&server, &server_len);
-        
+
+        if (!(HDR_GET_SEQ(received_msg.flags) ^ lastSEQ)) {
+            fprintf(stderr, "Duplicate validation failed! Packet dropped.\n");
+            continue;
+        }
+
+        lastSEQ = HDR_GET_SEQ(received_msg.flags); 
+
         if (len < 0) {
             perror("recvfrom failed");
             continue;
