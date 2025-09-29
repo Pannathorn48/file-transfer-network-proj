@@ -78,7 +78,7 @@ int server_handle_handshake(int sock, struct message *msg , struct sockaddr_in c
         return ERR_RECV_FAIL;
     }
 
-    // Restore socket to blocking mode (optional)
+    // Restore socket to blocking mode
     tv.tv_sec = 0;
     tv.tv_usec = 0;
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));

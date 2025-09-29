@@ -39,11 +39,17 @@
 #define HDR_SEQ_MASK         0x00FFFFFFu  /* bits 23-0  */
 #define HDR_ERR_MASK         0x0F000000u  /* bits 23-0  */
 
-/* Error flag */
+/* Error flag - full 32-bit values (for backward compatibility) */
 #define HDR_FLAG_SUCC        0x00000000u /* 0000 */
 #define HDR_ERR_FNF          0x08000000u /* 1000 */
 #define HDR_ERR_SUCC         0x09000000u /* 1001 */
 #define HDR_ERR_NPM          0x0A000000u /* 1010 */
+
+/* Status codes - 4-bit values (use with HDR_GET_STATUS/HDR_SET_STATUS) */
+#define HDR_STATUS_SUCCESS   0x00u  /* 0000 */
+#define HDR_STATUS_FNF       0x08u  /* 1000 - File Not Found */
+#define HDR_STATUS_SUCC      0x09u  /* 1001 - Success */
+#define HDR_STATUS_NPM       0x0Au  /* 1010 - No Permission */
 
 /* Shifts */
 #define HDR_STATUS_SHIFT     24
@@ -79,6 +85,15 @@ struct message {
     unsigned short data_length; /* Number of valid bytes in data */
 } __attribute__((packed));
 
+
+// Status for establishing connection in client side
+#define CLIENT_NOT_CONN 0
+#define CLIENT_ESTABLISH_CONN 1
+
+
+#define MAX_RETRY 10
+#define HANDSHAKE_TIMEOUT_SEC 3  // Timeout for each handshake attempt
+
 /* Example unpack pattern:
  * uint8_t  status = HDR_GET_STATUS(msg->header_flags);
  * uint32_t seq    = HDR_GET_SEQ(msg->header_flags);
@@ -110,11 +125,12 @@ int new_connection(char* port , struct sockaddr_in* server);
  * @param sock : client socket file descriptor
  * @param msg : message structure for handshake communication
  * @param server : server address information struct
+ * @param current_status : pointer to the current connection status variable
  * @return Returns:
  * - 0 on successful handshake completion
  * - negative number if handshake fails or an error occurs
  */
-int client_handle_handshake(int sock, struct message *msg , struct sockaddr_in server);
+int client_handle_handshake( int *current_status, int sock, struct message *msg , struct sockaddr_in server);
 
 /**
  * @brief Handle server-side handshake process
@@ -131,21 +147,16 @@ int client_handle_handshake(int sock, struct message *msg , struct sockaddr_in s
  */
 int server_handle_handshake(int sock, struct message *msg , struct sockaddr_in client);
 
+
 /**
- * @brief Checks a message for an ACK or NACK pattern.
+ * @brief Setup connection timeout status
  *
- * This function searches the input string for patterns indicating
- * an Acknowledge (ACK) or Negative Acknowledge (NACK).
+ * This function sets up the connection timeout status for the given status variable.
+ * It configures the timeout duration for the connection.
  *
- * @param str :  The input string to be checked.
- * @return Returns:
- * - 0 if an ACK is found.
- * - 1 if a NACK is found.
- * - -1 if neither an ACK nor a NACK is found.
+ * @param status : pointer to the status variable to be updated
+ * @param timeout_sec : timeout duration in seconds
  */
-short validate_header(struct message* msg);
-
-int init_client(char *ip , char* port);
-
+void setup_connection_timeout_status(int *status , int timeout_sec);
 
 #endif

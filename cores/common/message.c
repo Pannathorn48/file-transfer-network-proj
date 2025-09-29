@@ -26,16 +26,20 @@ int send_message(struct message *msg, int sock, struct sockaddr_in dest_addr)
 
 
 void segment_file(const char* filename, int sock, struct sockaddr_in client, struct sockaddr_in server) { 
+    struct message msg;
+    memset(&msg, 0, sizeof(msg));
+
     char buffer[BUFFER_SIZE];
     FILE *file = fopen(filename, "rb");
     if (!file) {
         perror("Failed to open file");
+        msg.data_length = 0;
+        HDR_SET_STATUS(msg.flags, HDR_STATUS_FNF);
+        set_message_checksum(&msg);
+        send_message(&msg, sock, client);
         return;
     }
 
-    struct message msg;
-    memset(&msg, 0, sizeof(msg));
-    
     // Send metadata packet
     HDR_SET_META(msg.flags);
     char filename_copy[256];
@@ -69,6 +73,7 @@ void segment_file(const char* filename, int sock, struct sockaddr_in client, str
 
     fclose(file);
     printf("File %s segmented and sent.\n", filename);
+
 }
 
 int request_file(char fileName[], int sock, struct sockaddr_in server, struct sockaddr_in client_addr)
@@ -99,6 +104,8 @@ int request_file(char fileName[], int sock, struct sockaddr_in server, struct so
             continue;
         }
 
+    
+
         received_msg.data_length = len - (sizeof(received_msg.checksum) + sizeof(received_msg.flags));
 
         if (validate_message_checksum(&received_msg, len) != 0) {
@@ -115,6 +122,10 @@ int request_file(char fileName[], int sock, struct sockaddr_in server, struct so
             }
         }
         else {
+            if (HDR_GET_STATUS(received_msg.flags) == HDR_STATUS_FNF) {
+                fprintf(stderr, "Error: File not found on server.\n");
+                return 1;
+            }
             printf("RECEIVE DATA\n");
             fwrite(received_msg.data, 1, received_msg.data_length, file);
         }

@@ -21,3 +21,6 @@
 #define ERR_INVALID_HANDSHAKE -7
 // ERR_CHECKSUM_FAIL : checksum validation failed
 #define ERR_CHECKSUM_FAIL -8
+
+// ERR_MAX_RETRIES_REACHED : maximum retry attempts reached
+#define ERR_MAX_RETRIES_REACHED -9
