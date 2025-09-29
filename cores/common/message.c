@@ -127,9 +127,9 @@ void segment_file(const char *filename, int sock, struct sockaddr_in client, str
         set_message_checksum(&msg);
         send_message(&msg, sock, client);
         // seqNum++;
-        if (seqNum == 10) {
-            send_message(&msg, sock, client);
-        }
+        // if (seqNum == 10) {
+        //     send_message(&msg, sock, client);
+        // }
 
         // Waiting for client send ACK if client send NACK server will while loop send packet until client send ACK
         if (wait_response_from_client(msg, client, sock, seqNum)) continue;
@@ -192,17 +192,17 @@ int request_file(char fileName[], int sock, struct sockaddr_in server, struct so
             }
         }
 
-        if (lastSEQ == 20) {
-            fprintf(stderr, "Checksum validation failed! Packet dropped.\n");
-            send_NACK(sock, server);
-            // continue;
-            int received_len = recvfrom(sock, &received_msg, sizeof(received_msg), 0, (struct sockaddr *)&server, &server_len);
-            if (received_len < 0)
-            {
-                perror("recvfrom failed");
-                continue;
-            }
-        }
+        // if (lastSEQ == 20) {
+        //     fprintf(stderr, "Checksum validation failed! Packet dropped.\n");
+        //     send_NACK(sock, server);
+        //     // continue;
+        //     int received_len = recvfrom(sock, &received_msg, sizeof(received_msg), 0, (struct sockaddr *)&server, &server_len);
+        //     if (received_len < 0)
+        //     {
+        //         perror("recvfrom failed");
+        //         continue;
+        //     }
+        // }
 
         // Check if duplicate client send ACK to server
         if (!(HDR_GET_SEQ(received_msg.flags) ^ lastSEQ) && !(HDR_GET_META(received_msg.flags))) {
