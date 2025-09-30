@@ -7,6 +7,32 @@
 #include "connection.h"
 #include "message.h"
 #include "checksum.h"
+#include "./utils.c"
+#include <errno.h>
+
+void set_recv_timeout(int sock, int timeout_msec) {
+    #ifdef _WIN32
+        DWORD timeout = timeout_msec; 
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
+            perror("setsockopt(SO_RCVTIMEO) failed");
+        }
+    #else
+        struct timeval tv;
+        if (timeout_msec == 0) {
+            tv.tv_sec  = 0;
+            tv.tv_usec = 0;
+        } else {
+            tv.tv_sec  = timeout_msec / 1000;
+            tv.tv_usec = (timeout_msec % 1000) * 1000;
+        }
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+            perror("setsockopt(SO_RCVTIMEO) failed");
+        }
+    #endif
+}
+
+
+short window_count = 0;
 
 void send_NACK(int sock, struct sockaddr_in dest_addr) {
     struct message msg_NACK;
@@ -17,15 +43,21 @@ void send_NACK(int sock, struct sockaddr_in dest_addr) {
     send_message(&msg_NACK, sock, dest_addr);
 }
 
-int wait_response_from_client(struct message msg, struct sockaddr_in client, int sock, uint32_t seq) {
-    while(1) {
+int wait_response_from_client(struct message msg, struct sockaddr_in client, int sock, struct packet* packets) {
+        // set_recv_timeout(sock, 5000);
         struct message msg_response;
         memset(&msg_response, 0, sizeof(msg_response));
         socklen_t client_len = sizeof(client);
         int received_len = recvfrom(sock, &msg_response, sizeof(msg_response), 0, (struct sockaddr *)&client, &client_len);
+        // if (errno == EWOULDBLOCK || errno == EAGAIN) {
+        //     errno = 0;
+        //     printf("Receive timeout!!\n");
+        // }
+
         if (received_len < 0)
         {
             perror("recvfrom failed");
+            // set_recv_timeout(sock, 0);
             return 1;
         }
         // Calculate the data length from the received packet size
@@ -61,12 +93,30 @@ int wait_response_from_client(struct message msg, struct sockaddr_in client, int
         // Handle duplicate ACKs in case repeated ACKs are received.
         if (!(HDR_GET_ACK(msg_response.flags) ^ HDR_ACK_ACK)) {
             printf("Receive ACK sequence number: %d\n", HDR_GET_SEQ(msg_response.flags));
-            if (HDR_GET_SEQ(msg_response.flags) < seq) {
-                continue;
+            // if (HDR_GET_SEQ(msg_response.flags) < seq) {
+            //     continue;
+            // }
+            if (packets == NULL) {
+                // if (HDR_GET_SEQ(msg_response.flags) < seq) {
+                //     continue;
+                // }
+                // set_recv_timeout(sock, 0);
+                return 0;
+            }
+            for (int i = 0; i < window_count; i++) {
+                if (HDR_GET_SEQ(packets[i].msg.flags) == HDR_GET_SEQ(msg_response.flags)) {
+                    if (packets[i].received) {
+                        // set_recv_timeout(sock, 0);
+                        return 0;
+                    }
+                    packets[i].received = true;
+                    // set_recv_timeout(sock, 0);
+                    return 0;
+                }
             }
         }
+        // set_recv_timeout(sock, 0);
         return 0;
-    }
 }
 
 // Helper function to send a message without waiting for an ACK
@@ -85,7 +135,7 @@ int send_message(struct message *msg, int sock, struct sockaddr_in dest_addr)
     return 0;
 }
 
-void segment_file(const char *filename, int sock, struct sockaddr_in client, struct sockaddr_in server)
+void segment_file(const char *filename, int sock, struct sockaddr_in client, struct packet* packets)
 {
     struct message msg;
     memset(&msg, 0, sizeof(msg));
@@ -112,30 +162,79 @@ void segment_file(const char *filename, int sock, struct sockaddr_in client, str
     set_message_checksum(&msg);
     send_message(&msg, sock, client);
 
-    wait_response_from_client(msg, client, sock, 0);
+    wait_response_from_client(msg, client, sock, NULL);
 
-    size_t bytes_read;
+    size_t bytes_read = 1;
     uint32_t seqNum = 0x0;
+    // bool dropped = false;
+    while (1)
+    {   
+        if (bytes_read <= 0) break;
+        window_count = 0;
+        // read and keep in buffer
+        for (int i = 0; i < WINDOW_SIZE && (bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0 ; i++) {
+            // printf("Read %zu bytes from file for packet %d\n", bytes_read, i);
+            memset(&msg, 0, sizeof(msg));
+            HDR_SET_SEQ(msg.flags, seqNum);
+            memcpy(msg.data, buffer, bytes_read);
+            msg.data_length = bytes_read;
+            // printf("Packet %d data length: %d\n", i, msg.data_length);
+            // printf("%s\n", msg.data);
+            
+            set_message_checksum(&msg);
+            struct packet pkt = {false, msg, current_time_ms()};
+            packets[i] = pkt;
+            seqNum++;
+            window_count++;
+        }
 
-    while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) > 0)
-    {
-        memset(&msg, 0, sizeof(msg));
-        HDR_SET_SEQ(msg.flags, seqNum);
-        memcpy(msg.data, buffer, bytes_read);
-        msg.data_length = bytes_read;
-        // printf("Length of data: %d\n", msg.data_length);
-        set_message_checksum(&msg);
-        send_message(&msg, sock, client);
+        for (int i = 0; i < window_count; i++) {
+            printf("Sending packet with sequence number: %d\n", seqNum);
+            packets[i].sent_timestamp = current_time_ms();
+            /* drop packet test */
+            // if (i == 2 && !dropped) {
+            //     printf("Simulating packet drop for packet %d\n", HDR_GET_SEQ(packets[i].msg.flags));
+            //     dropped = true;
+            //     continue;
+            // }
+            send_message(&(packets[i].msg), sock, client);
+        }
+
+        
+        while (1) {
+            short all_acked = 0;
+            // printf("all acked before wait: %d\n", all_acked);
+            wait_response_from_client(msg, client, sock, packets);
+            for (int i = 0; i < window_count; i++) {
+                if (!packets[i].received && (current_time_ms() - packets[i].sent_timestamp >= TIMEOUT_MSEC)) {
+                    printf("Timeout for packet %d, resending...\n", HDR_GET_SEQ(packets[i].msg.flags));
+                    packets[i].sent_timestamp = current_time_ms();
+                    send_message(&(packets[i].msg), sock, client);
+                }
+
+                // if (packets[i].received) {
+                //     all_acked++;
+                // }
+            }
+            for (int i = 0; i < window_count; i++) {
+                if (packets[i].received) all_acked++;
+            }
+            // printf("all acked before exit while: %d\n", all_acked);
+            if (all_acked == window_count) break;
+        }
+
+        // send_message(&msg, sock, client);
+        
+        
         // seqNum++;
         // if (seqNum == 10) {
         //     send_message(&msg, sock, client);
         // }
 
         // Waiting for client send ACK if client send NACK server will while loop send packet until client send ACK
-        if (wait_response_from_client(msg, client, sock, seqNum)) continue;
+        // if (wait_response_from_client(msg, client, sock, seqNum)) continue;
         
 
-        seqNum++;
     }
 
     // Send final packet with FIN flag
@@ -146,13 +245,13 @@ void segment_file(const char *filename, int sock, struct sockaddr_in client, str
     set_message_checksum(&msg);
     send_message(&msg, sock, client);
 
-    wait_response_from_client(msg, client, sock, 0);
+    wait_response_from_client(msg, client, sock, NULL);
 
     fclose(file);
     printf("File %s segmented and sent.\n", filename);
 }
 
-int request_file(char fileName[], int sock, struct sockaddr_in server, struct sockaddr_in client_addr)
+int request_file(char fileName[], int sock, struct sockaddr_in server)
 {
     struct message msg;
     memset(&msg, 0, sizeof(msg));
@@ -178,6 +277,7 @@ int request_file(char fileName[], int sock, struct sockaddr_in server, struct so
 
         // Validate the checksum of the incoming request
         received_msg.data_length = len - (sizeof(received_msg.checksum) + sizeof(received_msg.flags));
+        printf("%d\n", received_msg.data_length);
 
         while (validate_message_checksum(&received_msg, len) != 0)
         {
