@@ -168,7 +168,7 @@ int request_file(char fileName[], int sock, struct sockaddr_in server, struct so
 
     struct message received_msg;
     FILE *file = NULL;
-    uint32_t lastSEQ = 0x00000000u;
+    uint32_t lastSEQ = 0x00000001u;
 
     while (1)
     {
