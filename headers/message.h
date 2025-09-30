@@ -46,4 +46,32 @@ void segment_file(const char* filename, int sock, struct sockaddr_in client, str
 int request_file(char fileName[], int sock, struct sockaddr_in server, struct sockaddr_in client_addr);
 
 
+/**
+ * @brief Sends a NACK (Negative Acknowledgment) message to the destination.
+ * This function constructs a message with the NACK flag set and sends it
+ * to the specified destination address using the provided socket.
+ * 
+ * @param sock The socket file descriptor used for sending the NACK.
+ * @param dest_addr The destination socket address to which the NACK is sent.
+ */
+void send_NACK(int sock, struct sockaddr_in dest_addr);
+
+
+/**
+ * @brief Waits for and processes a response from the client.
+ * This function listens for a response packet (ACK or NACK) from the client.
+ * - If the received checksum is invalid, it sends a NACK and retries until a valid packet is received.
+ * - If a NACK is received from the client, it resends the original message.
+ * - If an ACK is received, it checks the sequence number against the expected sequence.
+ * 
+ * @param msg The original message that was sent to the client (used for retransmission if needed).
+ * @param client The client's socket address (source of the response).
+ * @param sock The socket file descriptor used for communication.
+ * @param seq The expected sequence number of the acknowledgment.
+ * 
+ * @return int Status code:
+ *         - 0 if a valid ACK is received for the expected sequence.
+ *         - 1 if recvfrom failed during reception.
+ */
+int wait_response_from_client(struct message msg, struct sockaddr_in client, int sock, u_int32_t seq);
 #endif
