@@ -44,7 +44,7 @@ void send_NACK(int sock, struct sockaddr_in dest_addr) {
 }
 
 int wait_response_from_client(struct message msg, struct sockaddr_in client, int sock, struct packet* packets) {
-        // set_recv_timeout(sock, 5000);
+        set_recv_timeout(sock, 5000);
         struct message msg_response;
         memset(&msg_response, 0, sizeof(msg_response));
         socklen_t client_len = sizeof(client);
@@ -57,7 +57,7 @@ int wait_response_from_client(struct message msg, struct sockaddr_in client, int
         if (received_len < 0)
         {
             perror("recvfrom failed");
-            // set_recv_timeout(sock, 0);
+            set_recv_timeout(sock, 0);
             return 1;
         }
         // Calculate the data length from the received packet size
@@ -100,22 +100,22 @@ int wait_response_from_client(struct message msg, struct sockaddr_in client, int
                 // if (HDR_GET_SEQ(msg_response.flags) < seq) {
                 //     continue;
                 // }
-                // set_recv_timeout(sock, 0);
+                set_recv_timeout(sock, 0);
                 return 0;
             }
             for (int i = 0; i < window_count; i++) {
                 if (HDR_GET_SEQ(packets[i].msg.flags) == HDR_GET_SEQ(msg_response.flags)) {
                     if (packets[i].received) {
-                        // set_recv_timeout(sock, 0);
+                        set_recv_timeout(sock, 0);
                         return 0;
                     }
                     packets[i].received = true;
-                    // set_recv_timeout(sock, 0);
+                    set_recv_timeout(sock, 0);
                     return 0;
                 }
             }
         }
-        // set_recv_timeout(sock, 0);
+        set_recv_timeout(sock, 0);
         return 0;
 }
 
@@ -165,8 +165,8 @@ void segment_file(const char *filename, int sock, struct sockaddr_in client, str
     wait_response_from_client(msg, client, sock, NULL);
 
     size_t bytes_read = 1;
-    uint32_t seqNum = 0x0;
-    // bool dropped = false;
+    uint32_t seqNum = 0x000000001u;
+    bool dropped = false;
     while (1)
     {   
         if (bytes_read <= 0) break;
@@ -192,11 +192,14 @@ void segment_file(const char *filename, int sock, struct sockaddr_in client, str
             printf("Sending packet with sequence number: %d\n", seqNum);
             packets[i].sent_timestamp = current_time_ms();
             /* drop packet test */
-            // if (i == 2 && !dropped) {
+            // if (HDR_GET_SEQ(packets[i].msg.flags) % 351 == 0 && !dropped) {
             //     printf("Simulating packet drop for packet %d\n", HDR_GET_SEQ(packets[i].msg.flags));
             //     dropped = true;
             //     continue;
+            // } else{
+            //     dropped = false;
             // }
+
             send_message(&(packets[i].msg), sock, client);
         }
 
@@ -267,8 +270,11 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
 
     struct message received_msg;
     FILE *file = NULL;
-    uint32_t lastSEQ = 0x00000001u;
+    uint32_t lastSEQ = 0x00000000u;
+    bool data_started = false;
 
+    struct packet packets[WINDOW_SIZE];
+    short packet_count = 0;
     while (1)
     {
         memset(&received_msg, 0, sizeof(received_msg));
@@ -337,23 +343,52 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
                 perror("Failed to open file for writing");
                 return 1;
             }
-            lastSEQ = 1;
+            lastSEQ = 0;
         }
         else
         {
+            if (packet_count == WINDOW_SIZE)
+            {
+                for (int i = 0; i < WINDOW_SIZE; i++)
+                {
+                    if (packets[i].received && packets[i].msg.data_length > 0)
+                    {
+                        printf("Writing packet with sequence number: %d to file (%d)\n", HDR_GET_SEQ(packets[i].msg.flags), packets[i].msg.data_length);
+                        fwrite(packets[i].msg.data, 1, packets[i].msg.data_length, file);  
+                    }
+                    packets[i].received = false;
+                }
+                packet_count = 0;
+            }
             if (HDR_GET_STATUS(received_msg.flags) == HDR_STATUS_FNF)
             {
                 fprintf(stderr, "Error: File not found on server.\n");
                 return 1;
             }
             printf("RECEIVE DATA\n");
-            fwrite(received_msg.data, 1, received_msg.data_length, file);
+            // for (int i = 0; i < WINDOW_SIZE; i++) {
+            //     if (HDR_GET_SEQ(packets[i].msg.flags) != HDR_GET_SEQ(received_msg.flags)) {
+
+            //     }
+            // }
+            struct packet pkt = {true, received_msg, current_time_ms()};
+            packets[((HDR_GET_SEQ(pkt.msg.flags) - 1) % 5)] = pkt;
+            packet_count++;
         }
 
         if (HDR_GET_FIN(received_msg.flags))
         {
             printf("END\n");
-
+            
+            for (int i = 0; i < packet_count; i++)
+            {
+                if (packets[i].received && packets[i].msg.data_length > 0)
+                {
+                    printf("Writing packet with sequence number: %d to file (%d)\n", HDR_GET_SEQ(packets[i].msg.flags), packets[i].msg.data_length);
+                    fwrite(packets[i].msg.data, 1, packets[i].msg.data_length, file);  
+                }
+                packets[i].received = false;
+            }
             // Send final ACK after receiving FIN
             memset(&msg, 0, sizeof(msg));
             HDR_SET_ACK(msg.flags, HDR_ACK_ACK);
@@ -366,6 +401,11 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
         }
 
         // Send ACK for data packet
+
+        /* ACK Drop test */
+        // if (HDR_GET_SEQ(received_msg.flags) % 350 == 0) {
+        //     continue;
+        // }
         memset(&msg, 0, sizeof(msg));
         HDR_SET_ACK(msg.flags, HDR_ACK_ACK);
         HDR_SET_SEQ(msg.flags, lastSEQ);
