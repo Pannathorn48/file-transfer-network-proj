@@ -76,6 +76,7 @@ void send_NACK(int sock, struct sockaddr_in dest_addr);
  * @param msg The original message that was sent to the client (used for retransmission if needed).
  * @param client The client's socket address (source of the response).
  * @param sock The socket file descriptor used for communication.
+ * @param packets An array of packets for implementing selective repeat
  * 
  * @return int Status code:
  *         - 0 if a valid ACK is received for the expected sequence.
