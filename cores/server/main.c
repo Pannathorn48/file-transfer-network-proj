@@ -11,6 +11,7 @@
 #include <sys/types.h>
 
 int main(int argc , char *argv[]) {
+    struct packet packets[WINDOW_SIZE];
     if (argc != 2){
         fprintf(stderr, "Usage: %s <port>\n", argv[0]);
         exit(EXIT_FAILURE);
@@ -75,7 +76,7 @@ int main(int argc , char *argv[]) {
             }
         } else if (msg.data_length > 0) {
             // Correct call to segment_file with all required arguments
-            segment_file(msg.data, sock, client, server);
+            segment_file(msg.data, sock, client, packets);
         } else {
             if (validate_message_checksum(&msg, received_len) == 0) {
                 continue;

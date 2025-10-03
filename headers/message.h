@@ -6,9 +6,19 @@
 #include <stdint.h>
 #include <netinet/in.h>
 #include "connection.h"
+#include <stdbool.h>
 
 #define BUFFER_SIZE 1024
 #define PORT 8080
+#define WINDOW_SIZE 5
+#define TIMEOUT_MSEC 3000
+
+
+struct packet {
+    bool received;
+    struct message msg;
+    long long sent_timestamp;
+};
 
 /**
  * @brief Sends a message over a socket.
@@ -29,9 +39,9 @@ int send_message(struct message *msg, int sock, struct sockaddr_in dest_addr);
  * @param filename: the name of the file to be segmented
  * @param sock: the socket used to send file
  * @param client: the client's socket address
- * @param server: the server's socket address (for checksum)
+ * @param packets: array of packets for implementing selective repeat
  */
-void segment_file(const char* filename, int sock, struct sockaddr_in client, struct sockaddr_in server);
+void segment_file(const char* filename, int sock, struct sockaddr_in client, struct packet* packets);
 
 
 /**
@@ -41,9 +51,8 @@ void segment_file(const char* filename, int sock, struct sockaddr_in client, str
  * @param fileName: the name of the file to request
  * @param sock: the socket file descriptor
  * @param server: the server's socket address
- * @param client_addr: the client's socket address (for checksum)
  */
-int request_file(char fileName[], int sock, struct sockaddr_in server, struct sockaddr_in client_addr);
+int request_file(char fileName[], int sock, struct sockaddr_in server);
 
 
 /**
@@ -67,11 +76,10 @@ void send_NACK(int sock, struct sockaddr_in dest_addr);
  * @param msg The original message that was sent to the client (used for retransmission if needed).
  * @param client The client's socket address (source of the response).
  * @param sock The socket file descriptor used for communication.
- * @param seq The expected sequence number of the acknowledgment.
  * 
  * @return int Status code:
  *         - 0 if a valid ACK is received for the expected sequence.
  *         - 1 if recvfrom failed during reception.
  */
-int wait_response_from_client(struct message msg, struct sockaddr_in client, int sock, u_int32_t seq);
+int wait_response_from_client(struct message msg, struct sockaddr_in client, int sock, struct packet* packets);
 #endif

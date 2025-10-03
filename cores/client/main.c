@@ -77,7 +77,7 @@ int main(int argc , char *argv[]){
         }
 
         // Call the updated request_file function with the correct arguments
-        request_file(fileName, sock, server, client_addr);
+        request_file(fileName, sock, server);
     }
 
     close(sock);
