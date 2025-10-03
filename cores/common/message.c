@@ -154,9 +154,9 @@ void segment_file(const char *filename, int sock, struct sockaddr_in client, str
 
     // Send metadata packet
     HDR_SET_META(msg.flags);
-    char filename_copy[256];
-    sprintf(filename_copy, "[c]%s", filename);
-    strcpy(msg.data, filename_copy);
+    // char filename_copy[256];
+    // sprintf(filename_copy, "[c]%s", filename);
+    strcpy(msg.data, filename);
     msg.data_length = strlen(msg.data);
     // printf("Length of meta data: %d\n", msg.data_length);
     set_message_checksum(&msg);
@@ -337,7 +337,42 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
         if (HDR_GET_META(received_msg.flags))
         {
             printf("RECEIVE META DATA\n");
-            file = fopen(received_msg.data, "ab");
+
+            char filename_to_be_saved[1024];
+            char filename_only[896];
+            char file_extension[32];
+            
+            char *dot = strrchr(received_msg.data, '.');
+
+
+            bool has_extension = (dot != NULL && dot != received_msg.data);
+            strncpy(filename_to_be_saved, received_msg.data, sizeof(received_msg.data) - 1);
+            filename_to_be_saved[sizeof(received_msg.data) - 1] = '\0';
+
+            if (has_extension) {
+                strncpy(filename_only, received_msg.data, dot - received_msg.data);
+                snprintf(file_extension, sizeof(file_extension), "%s", dot);
+                filename_only[dot - received_msg.data] = '\0';
+            } else {
+                strncpy(filename_only, received_msg.data, sizeof(filename_only) - 1);
+                filename_only[sizeof(filename_only) - 1] = '\0';
+            }
+
+
+            short suffix_identifier = 1;
+            while (access(filename_to_be_saved, F_OK) == 0) {
+                if (has_extension)
+                    snprintf(filename_to_be_saved, sizeof(filename_to_be_saved), "%s_(%d)%s", filename_only, suffix_identifier, file_extension);
+                else
+                    snprintf(filename_to_be_saved, sizeof(filename_to_be_saved), "%s_(%d)", filename_only, suffix_identifier);
+
+                printf("File already exists. Trying new name: %s\n", filename_to_be_saved);
+                suffix_identifier++;
+            }
+            printf("Saving file as: %s\n", filename_to_be_saved);
+
+            file = fopen(filename_to_be_saved, "ab");
+
             if (!file)
             {
                 perror("Failed to open file for writing");
