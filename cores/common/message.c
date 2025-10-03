@@ -166,7 +166,6 @@ void segment_file(const char *filename, int sock, struct sockaddr_in client, str
 
     size_t bytes_read = 1;
     uint32_t seqNum = 0x000000001u;
-    bool dropped = false;
     while (1)
     {   
         if (bytes_read <= 0) break;
@@ -271,7 +270,6 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
     struct message received_msg;
     FILE *file = NULL;
     uint32_t lastSEQ = 0x00000000u;
-    bool data_started = false;
 
     struct packet packets[WINDOW_SIZE];
     short packet_count = 0;
