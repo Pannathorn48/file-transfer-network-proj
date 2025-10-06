@@ -42,6 +42,19 @@ int main(int argc , char *argv[]){
 
     while(1){
          // Perform handshake with server
+        
+        char fileName[1024];
+        printf("Enter filename to request (or 'quit' to exit): ");
+        if (!fgets(fileName, sizeof(fileName), stdin)) {
+            break;
+        }
+
+        fileName[strcspn(fileName, "\n")] = '\0';
+
+        if (strcmp(fileName, "quit") == 0) {
+            break;
+        }
+
         int handshake_status = client_handle_handshake(sock, &msg, server);
         if (handshake_status != 0) {
             switch (handshake_status)
@@ -61,17 +74,6 @@ int main(int argc , char *argv[]){
             }
             close(sock);
             exit(EXIT_FAILURE);
-        }
-        char fileName[1024];
-        printf("Enter filename to request (or 'quit' to exit): ");
-        if (!fgets(fileName, sizeof(fileName), stdin)) {
-            break;
-        }
-
-        fileName[strcspn(fileName, "\n")] = '\0';
-
-        if (strcmp(fileName, "quit") == 0) {
-            break;
         }
 
         // Call the updated request_file function with the correct arguments
