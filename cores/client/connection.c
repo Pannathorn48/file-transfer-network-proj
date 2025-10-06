@@ -6,24 +6,7 @@
 
 
 
-// Global variable to store the status pointer for timeout handler
-static int *g_status_ptr = NULL;
-
-// Timeout handler function
-void timeout_handler(int signum) {
-    if (signum == SIGALRM && g_status_ptr != NULL) {
-        *g_status_ptr = CLIENT_NOT_CONN;
-        // printf("Connection timed out. Status set to CLIENT_NOT_CONN.\n");
-        // Uncomment the above line for debugging
-    }
-}
-
-int client_handle_handshake(int *current_status, int sock, struct message *msg , struct sockaddr_in server){
-    if (*current_status == CLIENT_ESTABLISH_CONN){
-        printf("Connection already established.\n");
-        return 0;
-    }
-    
+int client_handle_handshake( int sock, struct message *msg , struct sockaddr_in server){
     unsigned int server_len = sizeof(server);
     int retry_count = 0;
     
@@ -119,9 +102,6 @@ int client_handle_handshake(int *current_status, int sock, struct message *msg ,
         }
         printf("Final ACK sent, handshake completed successfully.\n");
         
-        // Set status to established on successful handshake
-        *current_status = CLIENT_ESTABLISH_CONN;
-        
         // Clear the socket timeout after successful handshake
         struct timeval tv_reset;
         tv_reset.tv_sec = 0;
@@ -143,22 +123,3 @@ int client_handle_handshake(int *current_status, int sock, struct message *msg ,
 
 
 
-void setup_connection_timeout_status(int *status, int timeout_sec){
-    struct itimerval timer;
-    
-    // Store the status pointer globally so the signal handler can access it
-    g_status_ptr = status;
-    
-    // Set up signal handler for SIGALRM
-    signal(SIGALRM, timeout_handler);
-
-    timer.it_value.tv_sec = timeout_sec;      // Initial delay
-    timer.it_value.tv_usec = 0;
-    timer.it_interval.tv_sec = timeout_sec;   // Recurring interval
-    timer.it_interval.tv_usec = 0;
-    
-    // Start the timer
-    setitimer(ITIMER_REAL, &timer, NULL);
-
-    printf("Periodic timer set up - function will be called every %d seconds\n", timeout_sec);
-}

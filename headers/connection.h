@@ -125,12 +125,11 @@ int new_connection(char* port , struct sockaddr_in* server);
  * @param sock : client socket file descriptor
  * @param msg : message structure for handshake communication
  * @param server : server address information struct
- * @param current_status : pointer to the current connection status variable
  * @return Returns:
  * - 0 on successful handshake completion
  * - negative number if handshake fails or an error occurs
  */
-int client_handle_handshake( int *current_status, int sock, struct message *msg , struct sockaddr_in server);
+int client_handle_handshake( int sock, struct message *msg , struct sockaddr_in server);
 
 /**
  * @brief Handle server-side handshake process

@@ -9,11 +9,9 @@
 #include "checksum.h"
 #include <sys/types.h>
 
-int status = CLIENT_NOT_CONN;
 
 int main(int argc , char *argv[]){
 
-    setup_connection_timeout_status(&status, 30);
     if (argc != 3) {
         perror("Require server IP address and port as argument");
         exit(EXIT_FAILURE);
@@ -44,7 +42,7 @@ int main(int argc , char *argv[]){
 
     while(1){
          // Perform handshake with server
-        int handshake_status = client_handle_handshake(&status, sock, &msg, server);
+        int handshake_status = client_handle_handshake(sock, &msg, server);
         if (handshake_status != 0) {
             switch (handshake_status)
             {
