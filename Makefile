@@ -4,9 +4,9 @@ CFLAGS = -Wall -Wextra -I./headers
 LDFLAGS = 
 
 # Define object files for each program to improve clarity and reduce redundancy
-SERVER_OBJS = ./bin/server.o ./bin/server_connection.o ./bin/message.o ./bin/checksum.o
-CLIENT_OBJS = ./bin/client.o ./bin/client_connection.o ./bin/message.o ./bin/checksum.o 
-TEST_OBJS = ./bin/checksum_test.o ./bin/checksum.o ./bin/message.o # Group test objects for clarity
+SERVER_OBJS = ./bin/server.o ./bin/server_connection.o ./bin/message.o ./bin/checksum.o ./bin/random.o
+CLIENT_OBJS = ./bin/client.o ./bin/client_connection.o ./bin/message.o ./bin/checksum.o  ./bin/random.o
+TEST_OBJS = ./bin/checksum_test.o ./bin/checksum.o ./bin/message.o ./bin/random.o # Group test objects for clarity
 
 # ---
 # General Targets and Setup
@@ -69,6 +69,9 @@ test: checksum_test
 # 	$(CC) $(CFLAGS) -c $< -o $@
 
 ./bin/checksum_test.o: ./tests/checksum_test.c | mkdir_bin
+	$(CC) $(CFLAGS) -c $< -o $@
+
+./bin/random.o: ./cores/common/random.c | mkdir_bin
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # ---

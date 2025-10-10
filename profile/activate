@@ -2,6 +2,7 @@ _OLD_PATH="$PATH"
 NETWORK_ACTIVATE=true
 
 server(){
+    make clear
     make server
     echo "------------------------"
     ./bin/server "$@"

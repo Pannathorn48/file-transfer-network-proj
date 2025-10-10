@@ -62,8 +62,9 @@ int request_file(char fileName[], int sock, struct sockaddr_in server);
  * 
  * @param sock The socket file descriptor used for sending the NACK.
  * @param dest_addr The destination socket address to which the NACK is sent.
+ * @param seqNum The sequence number to include in the NACK message.
  */
-void send_NACK(int sock, struct sockaddr_in dest_addr);
+void send_NACK(int sock, struct sockaddr_in dest_addr , u_int32_t seqNum);
 
 
 /**

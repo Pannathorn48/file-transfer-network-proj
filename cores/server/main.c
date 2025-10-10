@@ -11,6 +11,7 @@
 #include <sys/types.h>
 
 int main(int argc , char *argv[]) {
+    srand(time(NULL)); // Seed the random number generato
     struct packet packets[WINDOW_SIZE];
     if (argc != 2){
         fprintf(stderr, "Usage: %s <port>\n", argv[0]);
