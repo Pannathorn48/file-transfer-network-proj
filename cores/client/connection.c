@@ -11,13 +11,21 @@ int client_handle_handshake( int sock, struct message *msg , struct sockaddr_in 
     int retry_count = 0;
     
     // Set timeout for handshake attempts
-    struct timeval tv;
-    tv.tv_sec = HANDSHAKE_TIMEOUT_SEC;
-    tv.tv_usec = 0;
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
-        perror("setsockopt failed");
-        return ERR_SOCKET_FAIL;
-    }
+    #if defined(_WIN32) || defined(_WIN64)
+        DWORD timeout = HANDSHAKE_TIMEOUT_SEC * 1000; // milliseconds
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
+            fprintf(stderr, "setsockopt failed: %d\n", WSAGetLastError());
+            return ERR_SEND_FAIL;
+        }
+    #else
+        struct timeval tv;
+        tv.tv_sec = HANDSHAKE_TIMEOUT_SEC;
+        tv.tv_usec = 0;
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+            perror("setsockopt failed");
+            return ERR_SOCKET_FAIL;
+        }
+    #endif
     
     printf("Starting handshake process with max %d retries...\n", MAX_RETRY);
     
@@ -103,15 +111,23 @@ int client_handle_handshake( int sock, struct message *msg , struct sockaddr_in 
         printf("Final ACK sent, handshake completed successfully.\n");
         
         // Clear the socket timeout after successful handshake
-        struct timeval tv_reset;
-        tv_reset.tv_sec = 0;
-        tv_reset.tv_usec = 0;
-        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv_reset, sizeof(tv_reset)) < 0) {
-            perror("Warning: Failed to reset socket timeout");
-            // Don't fail the handshake for this, just warn
-        } else {
-            printf("Socket timeout cleared after successful handshake.\n");
-        }
+        #if defined(_WIN32) || defined(_WIN64)
+            DWORD timeout_reset = 0; // milliseconds
+            if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout_reset, sizeof(timeout_reset)) < 0) {
+                fprintf(stderr, "setsockopt failed: %d\n", WSAGetLastError());
+                return ERR_SEND_FAIL;
+            }
+        #else
+            struct timeval tv_reset;
+            tv_reset.tv_sec = 0;
+            tv_reset.tv_usec = 0;
+            if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv_reset, sizeof(tv_reset)) < 0) {
+                perror("Warning: Failed to reset socket timeout");
+                // Don't fail the handshake for this, just warn
+            } else {
+                printf("Socket timeout cleared after successful handshake.\n");
+            }
+        #endif
 
         return 0; // Success
     }

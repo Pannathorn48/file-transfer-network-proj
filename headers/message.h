@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <netinet/in.h>
 #include "connection.h"
 #include <stdbool.h>
 
@@ -13,6 +12,27 @@
 #define WINDOW_SIZE 5
 #define TIMEOUT_MSEC 3000
 
+#define TEST_SENDER_PACKET_LOSS_PERCENTAGE 1
+// simulating by not sending data and continue the loop
+
+#define TEST_SENDER_PACKET_CORRUPTION_PERCENTAGE 10
+// simulating by corrupting the checksum
+
+#define TEST_SENDER_DUPLICATE_PACKET_PERCENTAGE 1
+// simulating by sending duplicate packet
+
+#define TEST_RECEIVER_PACKET_LOSS_PERCENTAGE 1
+// simulating by not sending ACK and continue the loop
+
+
+#ifndef F_OK
+    #include <io.h>
+    #define F_OK 0
+#endif
+
+#ifndef u_int32_t
+    #define u_int32_t uint32_t
+#endif
 
 struct packet {
     bool received;

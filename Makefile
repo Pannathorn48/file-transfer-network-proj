@@ -1,12 +1,19 @@
+# Define OS Check
+ifeq ($(OS),Windows_NT)
+    WINSOCK=-lws2_32
+else
+    WINSOCK=
+endif
+
 # Define the C compiler and flags
 CC = gcc
 CFLAGS = -Wall -Wextra -I./headers
-LDFLAGS = 
+LDFLAGS = ${WINSOCK}
 
 # Define object files for each program to improve clarity and reduce redundancy
-SERVER_OBJS = ./bin/server.o ./bin/server_connection.o ./bin/message.o ./bin/checksum.o ./bin/random.o
-CLIENT_OBJS = ./bin/client.o ./bin/client_connection.o ./bin/message.o ./bin/checksum.o  ./bin/random.o
-TEST_OBJS = ./bin/checksum_test.o ./bin/checksum.o ./bin/message.o ./bin/random.o # Group test objects for clarity
+SERVER_OBJS = ./bin/server.o ./bin/server_connection.o ./bin/message.o ./bin/checksum.o ./bin/random.o ./bin/utils.o
+CLIENT_OBJS = ./bin/client.o ./bin/client_connection.o ./bin/message.o ./bin/checksum.o  ./bin/random.o ./bin/utils.o
+TEST_OBJS = ./bin/checksum_test.o ./bin/checksum.o ./bin/message.o ./bin/random.o ./bin/utils.o# Group test objects for clarity
 
 # ---
 # General Targets and Setup
@@ -60,6 +67,9 @@ test: checksum_test
 	$(CC) $(CFLAGS) -c $< -o $@
 
 ./bin/message.o: ./cores/common/message.c | mkdir_bin
+	$(CC) $(CFLAGS) -c $< -o $@
+
+./bin/utils.o: ./cores/common/utils.c | mkdir_bin
 	$(CC) $(CFLAGS) -c $< -o $@
 
 ./bin/checksum.o: ./cores/common/checksum.c | mkdir_bin

@@ -1,13 +1,8 @@
 #ifndef NETWORK_HEADERS_H
 #define NETWORK_HEADERS_H
 
-#include <netinet/in.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
+#include "standard_lib.h"
+#include "network_lib.h"
 #include "connection.h"
 #include "error.h"
 #include "checksum.h"
@@ -62,13 +57,21 @@ int server_handle_handshake(int sock, struct message *msg , struct sockaddr_in c
     }
 
     // Set 30 sec timeout for handshake
-    struct timeval tv;
-    tv.tv_sec = 30;
-    tv.tv_usec = 0;
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
-        perror("setsockopt failed");
-        return ERR_SOCKET_FAIL;
-    }
+    #if defined(_WIN32) || defined(_WIN64)
+        DWORD timeout = 30000; 
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
+            fprintf(stderr, "setsockopt failed: %d\n", WSAGetLastError());
+            return ERR_SEND_FAIL;
+        }
+    #else
+        struct timeval tv;
+        tv.tv_sec = 30;
+        tv.tv_usec = 0;
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+            perror("setsockopt failed");
+            return ERR_SOCKET_FAIL;
+        }
+    #endif
 
     // Wait for ACK
     memset(msg, 0, sizeof(*msg));
@@ -79,9 +82,14 @@ int server_handle_handshake(int sock, struct message *msg , struct sockaddr_in c
     }
 
     // Restore socket to blocking mode
-    tv.tv_sec = 0;
-    tv.tv_usec = 0;
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    #if defined(_WIN32) || defined(_WIN64)
+        DWORD timeout_reset = 0; 
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout_reset, sizeof(timeout_reset));
+    #else
+        tv.tv_sec = 0;
+        tv.tv_usec = 0;
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    #endif
 
     if (HDR_GET_ACK(msg->flags) != HDR_ACK_ACK || HDR_GET_SEQ(msg->flags) != 1) {
         fprintf(stderr, "Invalid ACK received during handshake\n");

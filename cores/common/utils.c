@@ -1,5 +1,6 @@
+#include "utils.h"
+
 #ifdef _WIN32
-    #include <windows.h>
     long long current_time_ms() {
         FILETIME ft;
         ULARGE_INTEGER uli;
@@ -9,7 +10,6 @@
         return uli.QuadPart / 10000; 
     }
 #else
-    #include <sys/time.h>
     long long current_time_ms() {
         struct timeval tv;
         gettimeofday(&tv, NULL);
@@ -17,17 +17,28 @@
     }
 #endif
 
-#include <stdarg.h>
 
-#define PINK "175"
-#define RED "31"
-#define BLU "34"
-#define CYN "36"
-#define GRN "32"
-#define L_GRN "118"
-#define BRED "31"
-#define ORG "214"
-#define YLW "226"
+void set_recv_timeout(int sock, int timeout_msec) {
+    #ifdef _WIN32
+        DWORD timeout = timeout_msec; 
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
+            perror("setsockopt(SO_RCVTIMEO) failed");
+        }
+    #else
+        struct timeval tv;
+        if (timeout_msec == 0) {
+            tv.tv_sec  = 0;
+            tv.tv_usec = 0;
+        } else {
+            tv.tv_sec  = timeout_msec / 1000;
+            tv.tv_usec = (timeout_msec % 1000) * 1000;
+        }
+        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+            perror("setsockopt(SO_RCVTIMEO) failed");
+        }
+    #endif
+}
+
 
 void printLnColor(char* color, char* format, ...) {
     va_list args;

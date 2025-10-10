@@ -1,21 +1,9 @@
-#include <stdio.h>
-#include <string.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <stdlib.h>
+#include "standard_lib.h"
 #include "connection.h"
 #include "error.h"
 #include "random.h"
+#include "utils.h"
 
-#ifndef COLOR_H
-#define COLOR_H
-#define RED "\e[0;31m"
-#define BLU "\e[0;34m"
-#define reset "\e[0m"
-#define CYN "\e[0;36m"
-#define GRN "\e[0;32m"
-#define BRED "\e[1;31m"
-#endif
 
 
 // Generic function to calculate one's complement checksum
@@ -71,7 +59,7 @@ int validate_message_checksum(struct message *msg, int received_len) {
 
     // Compare the calculated checksum with the original
     if (calculated_checksum != original_checksum){
-        printf("%sChecksum validation failed! Packet dropped.%s\n", RED , reset);
+        printf("Checksum validation failed! Packet dropped.\n");
     }
     return (calculated_checksum == original_checksum) ? 0 : ERR_CHECKSUM_FAIL;
 }

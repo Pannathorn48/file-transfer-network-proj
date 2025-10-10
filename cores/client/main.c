@@ -1,16 +1,20 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
+#include "standard_lib.h"
+#include "network_lib.h"
 #include "connection.h"
 #include "message.h"
 #include "checksum.h"
-#include <sys/types.h>
 
 
 int main(int argc , char *argv[]){
+    #if defined(_WIN32) || defined(_WIN64)
+    WSADATA wsa_data;
+    int wsa_initialized = 0;
+    if (WSAStartup(MAKEWORD(2,2), &wsa_data) != 0) {
+        fprintf(stderr, "WSAStartup failed: %d\n", WSAGetLastError());
+        return 1;
+    }
+    wsa_initialized = 1;
+    #endif
 
     if (argc != 3) {
         perror("Require server IP address and port as argument");
@@ -30,6 +34,14 @@ int main(int argc , char *argv[]){
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = inet_addr(argv[1]);
     server.sin_port = htons(atoi(argv[2]));
+
+    #if defined(_WIN32) || defined(_WIN64)
+    if (connect(sock, (struct sockaddr*)&server, sizeof(server)) < 0) {
+        perror("Connect failed");
+        close(sock);
+        exit(EXIT_FAILURE);
+    }
+    #endif
 
     // Get the client's local IP address for checksum calculation
     if (getsockname(sock, (struct sockaddr*)&client_addr, &client_addr_len) < 0) {
@@ -81,5 +93,8 @@ int main(int argc , char *argv[]){
     }
 
     close(sock);
+    #if defined(_WIN32) || defined(_WIN64)
+        WSACleanup();
+    #endif
     return 0;
 }

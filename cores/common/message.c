@@ -1,37 +1,12 @@
-#include <stdio.h>
-#include <string.h>
+#include "standard_lib.h"
+#include "network_lib.h"
 #include <stdbool.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
+#include <errno.h>
 #include "connection.h"
 #include "message.h"
 #include "checksum.h"
 #include "random.h"
-#include "./utils.c"
-#include <errno.h>
-
-void set_recv_timeout(int sock, int timeout_msec) {
-    #ifdef _WIN32
-        DWORD timeout = timeout_msec; 
-        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout)) < 0) {
-            perror("setsockopt(SO_RCVTIMEO) failed");
-        }
-    #else
-        struct timeval tv;
-        if (timeout_msec == 0) {
-            tv.tv_sec  = 0;
-            tv.tv_usec = 0;
-        } else {
-            tv.tv_sec  = timeout_msec / 1000;
-            tv.tv_usec = (timeout_msec % 1000) * 1000;
-        }
-        if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
-            perror("setsockopt(SO_RCVTIMEO) failed");
-        }
-    #endif
-}
+#include "utils.h"
 
 
 short window_count = 0;
@@ -46,12 +21,6 @@ void send_NACK(int sock, struct sockaddr_in dest_addr , u_int32_t seqNum) {
     send_message(&msg_NACK, sock, dest_addr);
 }
 
-// send 1, 2 , 3 , 4 ,5 -> no wait
-// msg -> 5
-// client receive 1, 2 , 3 , CORRUPT
-// send NACK for 4
-// sever resend msg -> 5 
-// client ack 5 , receive 5 -> DUP ACK
 
 int wait_response_from_client(struct message msg, struct sockaddr_in client, int sock, struct packet* packets) {
         set_recv_timeout(sock, TIMEOUT_MSEC + 2000);
@@ -217,17 +186,17 @@ void segment_file(const char *filename, int sock, struct sockaddr_in client, str
         for (int i = 0; i < window_count; i++) {
             packets[i].sent_timestamp = current_time_ms();
 
-            if (random_percent(1)){
+            if (random_percent(TEST_SENDER_PACKET_LOSS_PERCENTAGE)){
                 printLnColor(ORG, "Simulating packet loss for packet with sequence number: %d", HDR_GET_SEQ(packets[i].msg.flags));
                 continue; // Simulate packet loss by skipping the send
             }
 
-            if (random_percent(10)){
+            if (random_percent(TEST_SENDER_PACKET_CORRUPTION_PERCENTAGE)){
                 printLnColor(ORG, "Simulating packet corruption for packet with sequence number: %d", HDR_GET_SEQ(packets[i].msg.flags));
                 packets[i].msg.checksum ^= 0xFFFF; // Corrupt the checksum
             }
 
-            if (random_percent(1)){
+            if (random_percent(TEST_SENDER_DUPLICATE_PACKET_PERCENTAGE)){
                 printLnColor(ORG, "Send duplicate packet for packet with sequence number: %d", HDR_GET_SEQ(packets[i].msg.flags));
                 send_message(&(packets[i].msg), sock, client);
             }
@@ -274,6 +243,7 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
 {
     bool is_meta_received = false;
     struct message msg;
+    char filename_to_be_saved[1024];
 
     uint32_t memo[WINDOW_SIZE];
     for (int i = 0  ; i < WINDOW_SIZE ; i++) memo[i] = i + 1;
@@ -359,7 +329,7 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
             is_meta_received = true;
             printf("RECEIVE META DATA\n");
 
-            char filename_to_be_saved[1024];
+            
             char filename_only[896];
             char file_extension[32];
             
@@ -463,7 +433,7 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
         // Send ACK for data packet
         memset(&msg, 0, sizeof(msg));
         HDR_SET_ACK(msg.flags, HDR_ACK_ACK);
-        if (random_percent(1)){
+        if (random_percent(TEST_RECEIVER_PACKET_LOSS_PERCENTAGE)){
             printLnColor(ORG, "Simulating ACK loss for packet with sequence number: %d", lastSEQ);
             continue; // Simulate ACK loss by skipping the send
         }
@@ -476,6 +446,7 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
     if (file)
         fclose(file);
     printf("Successfully received the file from the server\n");
-    printf("File %s reassembled successfully.\n", fileName);
+    printLnColor(L_GRN, "File %s reassembled successfully.", fileName);
+    printLnColor(L_GRN, "Saving received file as %s\n", filename_to_be_saved);
     return 0;
 }

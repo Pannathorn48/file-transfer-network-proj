@@ -1,16 +1,24 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
+#include "standard_lib.h"
+#include "network_lib.h"
 #include "connection.h"
 #include "error.h"
 #include "message.h"
 #include "checksum.h"
-#include <sys/types.h>
+#include "time.h"
+
 
 int main(int argc , char *argv[]) {
+
+    #if defined(_WIN32) || defined(_WIN64)
+    WSADATA wsa_data;
+    int wsa_initialized = 0;
+    if (WSAStartup(MAKEWORD(2,2), &wsa_data) != 0) {
+        fprintf(stderr, "WSAStartup failed: %d\n", WSAGetLastError());
+        return 1;
+    }
+    wsa_initialized = 1;
+    #endif
+
     srand(time(NULL)); // Seed the random number generato
     struct packet packets[WINDOW_SIZE];
     if (argc != 2){
@@ -86,5 +94,8 @@ int main(int argc , char *argv[]) {
             continue;
         }
     }
+    #if defined(_WIN32) || defined(_WIN64)
+        WSACleanup();
+    #endif
     return 0;
 }

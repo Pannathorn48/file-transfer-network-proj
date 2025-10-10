@@ -2,9 +2,7 @@
 #define CONNECTION_H
 
 #include <stdint.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <sys/time.h>
+#include "network_lib.h"
 #include <string.h>
 #include <stdio.h>
 #include "error.h"

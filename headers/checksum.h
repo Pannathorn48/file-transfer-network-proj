@@ -4,7 +4,6 @@
 #define CHECKSUM_H
 
 #include <stdint.h>
-#include <netinet/in.h>
 #include "connection.h"
 
 // Corrected function signatures to take a pointer to struct message
