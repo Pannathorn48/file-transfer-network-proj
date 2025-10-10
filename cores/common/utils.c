@@ -17,25 +17,25 @@
     }
 #endif
 
-// #include <stdarg.h>
+#include <stdarg.h>
 
-// #define PINK "175"
-// #define RED "31"
-// #define BLU "34"
-// #define CYN "36"
-// #define GRN "32"
-// #define L_GRN "118"
-// #define BRED "31"
-// #define ORG "214"
-// #define YLW "226"
+#define PINK "175"
+#define RED "31"
+#define BLU "34"
+#define CYN "36"
+#define GRN "32"
+#define L_GRN "118"
+#define BRED "31"
+#define ORG "214"
+#define YLW "226"
 
-// void printLnColor(char* color, char* format, ...) {
-//     va_list args;
-//     va_start(args, format);
+void printLnColor(char* color, char* format, ...) {
+    va_list args;
+    va_start(args, format);
     
-//     printf("\033[38;5;%sm", color);
-//     vprintf(format, args);
-//     printf("\033[m\n");
+    printf("\033[38;5;%sm", color);
+    vprintf(format, args);
+    printf("\033[m\n");
     
-//     va_end(args);
-// }
+    va_end(args);
+}

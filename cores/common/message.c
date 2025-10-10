@@ -1,13 +1,3 @@
-#ifndef COLOR_H
-#define COLOR_H
-#define RED "\e[0;31m"
-#define BLU "\e[0;34m"
-#define reset "\e[0m"
-#define CYN "\e[0;36m"
-#define GRN "\e[0;32m"
-#define BRED "\e[1;31m"
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -228,17 +218,17 @@ void segment_file(const char *filename, int sock, struct sockaddr_in client, str
             packets[i].sent_timestamp = current_time_ms();
 
             if (random_percent(1)){
-                printf("%sSimulating packet loss for packet with sequence number: %d%s\n", CYN ,  HDR_GET_SEQ(packets[i].msg.flags) , reset);
+                printLnColor(ORG, "Simulating packet loss for packet with sequence number: %d", HDR_GET_SEQ(packets[i].msg.flags));
                 continue; // Simulate packet loss by skipping the send
             }
 
             if (random_percent(10)){
-                printf("%sSimulating packet corruption for packet with sequence number: %d%s\n", CYN ,  HDR_GET_SEQ(packets[i].msg.flags) , reset);
+                printLnColor(ORG, "Simulating packet corruption for packet with sequence number: %d", HDR_GET_SEQ(packets[i].msg.flags));
                 packets[i].msg.checksum ^= 0xFFFF; // Corrupt the checksum
             }
 
             if (random_percent(1)){
-                printf("%sSend duplicate packet for packet with sequence number: %d%s\n", CYN ,  HDR_GET_SEQ(packets[i].msg.flags) , reset);
+                printLnColor(ORG, "Send duplicate packet for packet with sequence number: %d", HDR_GET_SEQ(packets[i].msg.flags));
                 send_message(&(packets[i].msg), sock, client);
             }
             send_message(&(packets[i].msg), sock, client);
@@ -474,7 +464,7 @@ int request_file(char fileName[], int sock, struct sockaddr_in server)
         memset(&msg, 0, sizeof(msg));
         HDR_SET_ACK(msg.flags, HDR_ACK_ACK);
         if (random_percent(1)){
-            printf("%sSimulating ACK loss for packet with sequence number: %d\n%s", CYN,lastSEQ, reset);
+            printLnColor(ORG, "Simulating ACK loss for packet with sequence number: %d", lastSEQ);
             continue; // Simulate ACK loss by skipping the send
         }
         HDR_SET_SEQ(msg.flags, lastSEQ);
