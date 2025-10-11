@@ -34,11 +34,7 @@ void set_message_checksum(struct message *msg) {
 
     // Calculate checksum over the entire message structure (flags + data)
     uint16_t calculated_checksum = calculate_checksum((const void *)&msg->flags, sizeof(msg->flags) + msg->data_length);
-    // if (random_percent(3)){
-    //     // Simulate a checksum error with a 3% probability
-    //     printf("Simulating checksum error for packet with sequence number: %d\n", HDR_GET_SEQ(msg->flags));
-    //     msg->data[0] ^= 0xFF; // Corrupt the first byte of data
-    // }
+
 
     msg->checksum = calculated_checksum;
 }
