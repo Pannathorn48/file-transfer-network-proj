@@ -7,7 +7,8 @@ endif
 
 # Define the C compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -I./headers
+# CFLAGS = -Wall -Wextra -I./headers
+CFLAGS = -I./headers
 LDFLAGS = ${WINSOCK}
 
 # Define object files for each program to improve clarity and reduce redundancy
@@ -20,6 +21,7 @@ TEST_OBJS = ./bin/checksum_test.o ./bin/checksum.o ./bin/message.o ./bin/random.
 # ---
 
 .PHONY: all build clean test checksum_test mkdir_bin clear clear-o
+
 all: build
 
 # 'build' target relies on 'mkdir_bin' and then builds the executables

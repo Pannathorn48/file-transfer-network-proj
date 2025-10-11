@@ -21,7 +21,7 @@ A reliable UDP-based client-server file transfer application implementing custom
 
 ## ⚙️ Installation & Setup
 
-### Method 1: Using Environment Profile (Recommended)
+### Method 1: Using Environment Profile for Macos and Linux only (Recommended)
 
 1. **Activate the project environment:**
    ```bash
