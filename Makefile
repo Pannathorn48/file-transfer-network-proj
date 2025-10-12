@@ -8,6 +8,7 @@ endif
 # Define the C compiler and flags
 CC = gcc
 CFLAGS = -Wall -Wextra -I./headers
+# CFLAGS = -I./headers
 LDFLAGS = ${WINSOCK}
 
 # Define object files for each program to improve clarity and reduce redundancy

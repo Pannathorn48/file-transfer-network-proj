@@ -15,7 +15,6 @@ A reliable UDP-based client-server file transfer application implementing custom
 ## ️ Requirements
 
 - **Compiler**: GCC with C99 support
-- **Operating System**: Unix-like systems (Linux, macOS)
 - **Network**: UDP socket support
 - **Build Tools**: Make
 

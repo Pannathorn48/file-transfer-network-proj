@@ -29,11 +29,23 @@ int client_handle_handshake( int sock, struct message *msg , struct sockaddr_in 
     
     printf("Starting handshake process with max %d retries...\n", MAX_RETRY);
     
-    // Retry loop for handshake
+    /*
+     * Main handshake retry loop
+     * - The client attempts a small 3-step handshake with the server.
+     * - Each iteration will: send a META packet, wait for META-ACK, validate it,
+     *   then send a final ACK to complete the handshake.
+     * - If any step fails (send error, timeout, invalid response), the client
+     *   will retry up to MAX_RETRY times with a 1-second backoff.
+     */
     while (retry_count < MAX_RETRY) {
         printf("Handshake attempt %d/%d\n", retry_count + 1, MAX_RETRY);
-        
-        // Step 1: Send META packet
+
+        /* Step 1: Send META packet (handshake initiation)
+         * - Prepare an empty message with the META flag set and ACK=NONE.
+         * - Sequence number 0 is used for the initial handshake packet.
+         * - set_message_checksum computes and writes the checksum into the message
+         *   so the receiver can validate integrity.
+         */
         memset(msg, 0, sizeof(*msg));
         msg->data_length = 0;
         HDR_SET_ACK(msg->flags, HDR_ACK_NONE);
@@ -45,6 +57,7 @@ int client_handle_handshake( int sock, struct message *msg , struct sockaddr_in 
         size_t handshake_size = sizeof(msg->checksum) + sizeof(msg->flags);
 
         if (sendto(sock, msg, handshake_size, 0, (struct sockaddr *)&server, server_len) < 0) {
+            /* If sending fails, increment retry counter and possibly abort */
             perror("sendto failed");
             retry_count++;
             if (retry_count >= MAX_RETRY) {
@@ -57,7 +70,11 @@ int client_handle_handshake( int sock, struct message *msg , struct sockaddr_in 
         }
         printf("META sent, waiting for META-ACK...\n");
 
-        // Step 2: Receive META-ACK
+        /* Step 2: Receive META-ACK
+         * - Wait for a response from the server. The socket has a receive timeout
+         *   configured earlier, so recvfrom will return -1 and set errno if the
+         *   server doesn't respond in time. This triggers a retry.
+         */
         memset(msg, 0, sizeof(*msg));
         int recv_len = recvfrom(sock, msg, sizeof(*msg), 0, (struct sockaddr *)&server, &server_len);
         if (recv_len < 0) {
@@ -72,7 +89,11 @@ int client_handle_handshake( int sock, struct message *msg , struct sockaddr_in 
             continue;
         }
 
-        // Step 3: Validate META-ACK
+        /* Step 3: Validate META-ACK
+         * - Verify the response has the META flag set and ACK==ACK.
+         * - The expected sequence number for the META-ACK is 0.
+         * - If validation fails, retry the handshake.
+         */
         if (!HDR_GET_META(msg->flags) || HDR_GET_ACK(msg->flags) != HDR_ACK_ACK || HDR_GET_SEQ(msg->flags) != 0) {
             printf("Invalid handshake response received.\n");
             retry_count++;
@@ -86,7 +107,11 @@ int client_handle_handshake( int sock, struct message *msg , struct sockaddr_in 
         }
         printf("META-ACK received, handshake successful.\n");
 
-        // Step 4: Send final ACK
+        /* Step 4: Send final ACK to confirm the handshake
+         * - After receiving the server's META-ACK, the client sends an ACK with
+         *   sequence number 1 and clears the META flag. This confirms the handshake
+         *   and signals both sides they can proceed to the file request/transfer phase.
+         */
         memset(msg, 0, sizeof(*msg));
         msg->data_length = 0;
         HDR_SET_ACK(msg->flags, HDR_ACK_ACK); 
@@ -128,7 +153,10 @@ int client_handle_handshake( int sock, struct message *msg , struct sockaddr_in 
                 printf("Socket timeout cleared after successful handshake.\n");
             }
         #endif
-
+        
+        /* Handshake succeeded: return 0 to caller. The client may now proceed
+         * to send a filename request and enter the file transfer phase.
+         */
         return 0; // Success
     }
     
