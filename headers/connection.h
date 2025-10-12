@@ -76,10 +76,12 @@
 #define HDR_GET_SEQ(h)       ( (h) & HDR_SEQ_MASK )
 #define HDR_SET_SEQ(h,seq)   do { (h) = ((h) & ~HDR_SEQ_MASK) | ((uint32_t)(seq) & HDR_SEQ_MASK); } while(0)
 
+#define BUFFER_SIZE 1024
+
 struct message {
     uint16_t checksum;
     uint32_t flags; /* Packed 32-bit header described above */
-    char data[1024];       /* Payload buffer */
+    char data[BUFFER_SIZE];       /* Payload buffer */
     unsigned short data_length; /* Number of valid bytes in data */
 } __attribute__((packed));
 

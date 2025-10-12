@@ -7,7 +7,6 @@
 #include "connection.h"
 #include <stdbool.h>
 
-#define BUFFER_SIZE 1024
 #define PORT 8080
 #define WINDOW_SIZE 5
 #define TIMEOUT_MSEC 3000
