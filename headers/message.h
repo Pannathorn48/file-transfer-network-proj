@@ -11,16 +11,16 @@
 #define WINDOW_SIZE 5
 #define TIMEOUT_MSEC 3000
 
-#define TEST_SENDER_PACKET_LOSS_PERCENTAGE 1
+#define TEST_SENDER_PACKET_LOSS_PERCENTAGE 0.1
 // simulating by not sending data and continue the loop
 
-#define TEST_SENDER_PACKET_CORRUPTION_PERCENTAGE 10
+#define TEST_SENDER_PACKET_CORRUPTION_PERCENTAGE 0.1
 // simulating by corrupting the checksum
 
-#define TEST_SENDER_DUPLICATE_PACKET_PERCENTAGE 1
+#define TEST_SENDER_DUPLICATE_PACKET_PERCENTAGE 0.1
 // simulating by sending duplicate packet
 
-#define TEST_RECEIVER_PACKET_LOSS_PERCENTAGE 1
+#define TEST_RECEIVER_PACKET_LOSS_PERCENTAGE 0.1
 // simulating by not sending ACK and continue the loop
 
 
